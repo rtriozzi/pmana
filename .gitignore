@@ -1,0 +1,9 @@
+data/
+output/
+*.h5
+*.csv
+*.log
+*.png
+*.pdf
+.ipynb_checkpoints/
+*.egg-info/
