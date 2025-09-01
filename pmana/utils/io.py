@@ -1,3 +1,4 @@
+import pathlib
 import re
 import shutil
 import glob
@@ -18,10 +19,10 @@ def FormatPadovaData(
 
         Input
         ---
-        InputPath : pathlib.Path-like
+        InputPath : str
                     Input filesystem path.
 
-        TargetPath : pathlib.Path-like
+        TargetPath : str
                      Target filesystem path.
 
         REGEXSTRING : str, optional
@@ -31,6 +32,9 @@ def FormatPadovaData(
         ---
         Creates a structured directory. Returns None.
     """
+
+    InputPath = pathlib.Path(InputPath)
+    TargetPath = pathlib.Path(TargetPath)
 
     # loop over the files in the flat data directory
     for FilePath in InputPath.glob("*.txt"):

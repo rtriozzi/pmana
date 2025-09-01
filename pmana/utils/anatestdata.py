@@ -3,6 +3,7 @@ import glob
 import numpy
 import pandas
 import scipy
+import pathlib
 
 from pmana.utils.io import ExtractSingleMeasurement, ExtractFileTimes
 from pmana.utils.fitting import Gaus
@@ -15,7 +16,7 @@ def Iterate(
     """
         Input
         ---
-        CampaignPath :  pathlib.Path-like
+        CampaignPath :  str
                         Filesystem path containing measurements.
         
         Analyze : function
@@ -26,8 +27,10 @@ def Iterate(
 
         Output
         ---
-        Provides a Pandas dataframe with the results.
+        Provides an array with the results.
     """
+
+    CampaignPath = pathlib.Path(CampaignPath)
 
     Output = []
 
@@ -47,8 +50,6 @@ def Iterate(
         CHOutput.extend([t, n])
         Output.append(CHOutput)
 
-    Output = pandas.DataFrame(Output)
-
     return Output
 
 def AnalyzeMeasurement(
@@ -58,6 +59,28 @@ def AnalyzeMeasurement(
     BINNAME = 'BinCenter',
     COUNTNAME = 'Population'
 ):
+    """
+        Analyze a single measurement, extracting for each channel
+        the mean and the standard deviation from a Gaussian fit,
+        along with their fit errors.
+
+        Input
+        ---
+        MeasurementPath : str
+                          Filesystem path containing measurements.
+        
+        rebin : bool, optional
+
+        debug : bool, optional
+
+        BINNAME : string, optional
+
+        COUNTNAME : string, optional
+
+        Output
+        ---
+        Provides a Pandas dataframe with the results.
+    """
     
     Output = []
 
@@ -106,3 +129,101 @@ def AnalyzeMeasurement(
         Output.append(errs[2]) ###< peak error
 
     return Output
+
+def DumpCampaigns(
+        DataPath
+):
+    """
+        Input
+        ---
+        DataPath : str
+                   Filesystem path containing measurements and mappings.
+
+        Output
+        ---
+        Provides an array table with paths from all campaigns.
+        Ordering: data, times, temperatures.
+    """
+
+    CampaignFiles = []
+
+    # go over measurements
+    for MeasurementPath in DataPath.glob("[!.]*"):
+
+        # for each measurement, get the files
+        for MeasurementElement in MeasurementPath.glob("[!.]*"):
+
+            if "Time" in MeasurementElement.name:
+                TimeMapping        = MeasurementElement
+            elif "Temperature" in MeasurementElement.name:
+                TemperatureMapping = MeasurementElement
+            else:
+                Data               = MeasurementElement
+
+        CampaignFiles.append([Data, TimeMapping, TemperatureMapping])
+
+    return CampaignFiles
+
+def MergeCampaigns(
+    DataPath,
+    AnalyzeTimes,
+    AnalyzeTemperatures,
+    AnalyzeCampaign,
+    AnalyzeMeas
+):
+    """
+        Input
+        ---
+        DataPath : str
+                   Filesystem path containing measurements and mappings.
+
+        AnalyzeTimes : func
+                       Module to extract the time mapping.
+
+        AnalyzeTemperatures: func
+                             Module to extract the temperatures.
+
+        AnalyzeCampaign : func
+                          Module that runs the analysis over a campaign.
+
+        Output
+        ---
+        Provides an array with all measurements and a pandas DataFrame temperatures.
+    """
+
+    MergedOutput       = []
+    MergedTemperatures = []
+
+    # get files for each campaign
+    # ordering: data, times, temperatures
+    DataPath      = pathlib.Path(DataPath)
+    CampaignFiles = DumpCampaigns(DataPath)
+
+    for Files in zip(CampaignFiles):
+
+        PATH_CAMPAIGN     = Files[0][0]
+        PATH_TIMES        = Files[0][1]
+        PATH_TEMPERATURES = Files[0][2]
+
+        # get time mapping
+        TimeMapping  = AnalyzeTimes(PATH_TIMES)
+
+        # get temperature mapping
+        Temperatures = AnalyzeTemperatures(PATH_TEMPERATURES)
+
+        # analyze campaign
+        Output       = AnalyzeCampaign(
+            PATH_CAMPAIGN,   ###< path to restructured data
+            AnalyzeMeas, ###< analyzing module 
+            TimeMapping  ###< file-to-time mapping
+        )
+
+        MergedOutput.extend(Output)
+        MergedTemperatures.append(Temperatures)
+
+    MergedTemperatures = pandas.concat(
+        MergedTemperatures,
+        ignore_index = True
+    )
+
+    return MergedOutput, MergedTemperatures

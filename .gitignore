@@ -1,5 +1,7 @@
 data/
 output/
+*__pycache__*
+*.DS_Store
 *.h5
 *.csv
 *.log
