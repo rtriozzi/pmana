@@ -110,14 +110,19 @@ def AnalyzeMeasurement(
         std = (max(x) - min(x)) / 2
 
         # perform Gaussian fit of channel
-        pars, covs = scipy.optimize.curve_fit(
-            Gaus, 
-            x,
-            y,
-            p0 = (numpy.max(CHData[COUNTNAME]), posMax, std),
-            maxfev=1000
-        )
-        errs = numpy.sqrt(numpy.diag(covs))
+        try:
+            pars, covs = scipy.optimize.curve_fit(
+                Gaus, 
+                x,
+                y,
+                p0 = (numpy.max(CHData[COUNTNAME]), posMax, std),
+                maxfev=1000
+            )
+            errs = numpy.sqrt(numpy.diag(covs))
+        except RuntimeError:
+            print("Could not perform fit here: ", MeasurementPath)
+            pars = numpy.zeros(NCHs)
+            errs = numpy.zeros(NCHs)
         if debug:
             print(f"Peak position: {posMax}")
             print(f"Candidate std. deviation: {std}")
