@@ -1,5 +1,6 @@
 data/
-output/
+out/
+plots/
 *__pycache__*
 *.DS_Store
 *.h5
