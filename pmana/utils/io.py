@@ -7,9 +7,9 @@ import pandas
 import datetime
 
 def FormatPadovaData(
-        InputPath,
-        TargetPath,
-        REGEXSTRING = r"--(\d{5})\.txt$"
+    InputPath,
+    TargetPath,
+    REGEXSTRING = r"--(\d{5})\.txt$"
 ):
     """
         Re-format the flat data structure from the Padova test-stand
@@ -89,7 +89,9 @@ def ExtractSingleMeasurement(
     return Data
 
 def ExtractFileTimes(
-    TimeMapping
+    TimeMapping,
+    DELIMITER = '  ',
+    COL_NAMES = ['Length', 'Date', 'Name']
 ):
     """
         Extracts a map between directories and files,
@@ -104,6 +106,12 @@ def ExtractFileTimes(
                      unzip -l <DataSet>.zip > TimeMapping.txt
                      Needs a bit of formatting by hand.
 
+        DELIMITER: str, optional
+                   Delimiter to extract dataframe from txt file.
+
+        COL_NAMES: array of str, optional
+                   The variables in the input txt files.
+
         Output
         ---
         Returns a Pandas dataframe contaning directory names, file names,
@@ -112,9 +120,9 @@ def ExtractFileTimes(
 
     FileTimes = pandas.read_csv(
         TimeMapping,
-        delimiter = '  ',
+        delimiter = DELIMITER,
         engine = 'python',
-        names = ['Length', 'Date', 'Name']
+        names = COL_NAMES
     )
     FileTimes['FileName'] = FileTimes['Name'].apply(os.path.basename)
     FileTimes['Date'] = FileTimes['Date'].apply(lambda date: datetime.datetime.strptime(date, "%m-%d-%Y %H:%M"))
@@ -122,7 +130,9 @@ def ExtractFileTimes(
     return FileTimes
 
 def ExtractTemperatureMonitoring(
-    TemperatureLog
+    TemperatureLog,
+    DELIMITER = ' ',
+    COL_NAMES = ['DateRaw', 'Time', 'T1', 'T2']
 ):
     """
         Extracts the temperatures from a dedicated monitor,
@@ -134,6 +144,12 @@ def ExtractTemperatureMonitoring(
                         Temperature log file.
                         Needs a bit of formatting by hand.
 
+        DELIMITER: str, optional
+                   Delimiter to extract dataframe from txt file.
+
+        COL_NAMES: array of str, optional
+                   The variables in the input txt files.
+
         Output
         ---
         Returns a Pandas dataframe contaning times and temperatures
@@ -142,9 +158,9 @@ def ExtractTemperatureMonitoring(
 
     FileTemperatures = pandas.read_csv(
         TemperatureLog,
-        delimiter = ' ',
+        delimiter = DELIMITER,
         engine = 'python',
-        names = ['DateRaw', 'Time', 'T1', 'T2']
+        names = COL_NAMES
     )
     FileTemperatures['Date'] = pandas.to_datetime(FileTemperatures['DateRaw'] + ' ' + FileTemperatures['Time'], format='%d.%m.%Y %H:%M')
     FileTemperatures['Date_Shifted'] = FileTemperatures['Date'] + pandas.Timedelta(minutes=12) ###< Known delay

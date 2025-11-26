@@ -11,6 +11,23 @@ def UpdateMatplotlibStyle(
     
     """
         Tweak matplotlib settings.
+
+        ---
+        Input:
+
+        ax: matplotlib axes obj
+            Axes whose settings need to be tweaked.
+        
+        xlabel: str
+                Label for the x axis.
+
+        ylabel: str
+                Label for the y axis.
+
+        ---
+        Output:     
+
+        Updated matplotlib axes.           
     """
 
     # labels
@@ -42,9 +59,17 @@ def PlotSingleChannel(
         ---
         Input:
 
-        Parsed channel data, coming from an oscilloscope
-        or a multi channel analyzer.
-        Data is already binned.
+        CHData: dataframe-like
+                Parsed channel data, coming from an oscilloscope
+                or a multi channel analyzer.
+                Data is already binned.
+
+        ax: matplotlib axes obj
+
+        channel: int, optional
+                 Channel number. Useful to get
+                 consistent color-coding for plots
+                 with multiple channels.
 
         ---
         Output:

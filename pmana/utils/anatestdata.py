@@ -52,7 +52,7 @@ def Iterate(
 
     return Output
 
-def AnalyzeMeasurement(
+def GaussianFitToChannel(
     MeasurementPath,
     rebin = False,
     debug = False,
@@ -123,6 +123,7 @@ def AnalyzeMeasurement(
             print("Could not perform fit here: ", MeasurementPath)
             pars = numpy.zeros(NCHs)
             errs = numpy.zeros(NCHs)
+
         if debug:
             print(f"Peak position: {posMax}")
             print(f"Candidate std. deviation: {std}")
@@ -219,8 +220,8 @@ def MergeCampaigns(
         # analyze campaign
         Output       = AnalyzeCampaign(
             PATH_CAMPAIGN,   ###< path to restructured data
-            AnalyzeMeas, ###< analyzing module 
-            TimeMapping  ###< file-to-time mapping
+            AnalyzeMeas,     ###< analyzing module 
+            TimeMapping      ###< file-to-time mapping
         )
 
         MergedOutput.extend(Output)
