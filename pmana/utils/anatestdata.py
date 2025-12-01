@@ -41,7 +41,10 @@ def Iterate(
         CHOutput = Analyze(MeasurementPath)
 
         # get the measurement time
-        MeasurementPaths = glob.glob(str(MeasurementPath) + "/F*")
+        MeasurementPaths = glob.glob(str(MeasurementPath) + "/*")
+        if not MeasurementPaths:
+            print(f"No time mapping for {MeasurementPath}")
+            continue
         t = TimeMapping[TimeMapping['FileName'] == os.path.basename(MeasurementPaths[0])].iloc[0]['Date']
 
         # get measurement number
