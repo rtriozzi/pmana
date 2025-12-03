@@ -4,6 +4,7 @@ import numpy
 import pandas
 import scipy
 import pathlib
+import datetime
 
 from pmana.utils.io import ExtractSingleMeasurement, ExtractFileTimes
 from pmana.utils.fitting import Gaus
@@ -11,7 +12,8 @@ from pmana.utils.fitting import Gaus
 def Iterate(
     CampaignPath,
     Analyze,
-    TimeMapping
+    TimeMapping,
+    DIR_KEY = '0*'
 ):
     """
         Input
@@ -35,17 +37,23 @@ def Iterate(
     Output = []
 
     # loop over measurements in the campaign
-    for MeasurementPath in CampaignPath.glob("0*"):
+    for MeasurementPath in CampaignPath.glob(DIR_KEY):
 
         # analyze the measurement
         CHOutput = Analyze(MeasurementPath)
 
         # get the measurement time
-        MeasurementPaths = glob.glob(str(MeasurementPath) + "/*")
-        if not MeasurementPaths:
-            print(f"No time mapping for {MeasurementPath}")
-            continue
-        t = TimeMapping[TimeMapping['FileName'] == os.path.basename(MeasurementPaths[0])].iloc[0]['Date']
+        if TimeMapping is not None: 
+            MeasurementPaths = glob.glob(str(MeasurementPath) + "/*")
+            if not MeasurementPaths:
+                print(f"No time mapping for {MeasurementPath}")
+                continue
+            t = TimeMapping[TimeMapping['FileName'] == os.path.basename(MeasurementPaths[0])].iloc[0]['Date']
+        else:
+            t = datetime.datetime.strptime(
+                os.path.basename(MeasurementPath), 
+                "%Y%m%d_%H%M%S"
+            )
 
         # get measurement number
         n = int(os.path.basename(MeasurementPath))
@@ -59,6 +67,8 @@ def GaussianFitToChannel(
     MeasurementPath,
     rebin = False,
     debug = False,
+    IS_DT5781 = False,
+    SKIP_NROWS = 0,
     BINNAME = 'BinCenter',
     COUNTNAME = 'Population'
 ):
@@ -88,10 +98,16 @@ def GaussianFitToChannel(
     Output = []
 
     # extract measurement data
-    Data = ExtractSingleMeasurement(MeasurementPath)
-    NCHs = len(Data) ###< number of channels in this campaign
+    if IS_DT5781:
+        Data = ExtractSingleMeasurement(MeasurementPath,
+            CHANNEL_KEY = 'CH*', N_SKIP_LINES = 3, COL_NAMES = ['c0', 'c1', 'c2'], DELIMITER = ' ')
+    else:
+        Data = ExtractSingleMeasurement(MeasurementPath)
 
     for CHData in Data:
+
+        if SKIP_NROWS > 0:
+            CHData = CHData.iloc[SKIP_NROWS:].reset_index(drop=True)
 
         # adaptively extract bin edges
         Diffs = numpy.diff(sorted(CHData[BINNAME]))
@@ -110,7 +126,9 @@ def GaussianFitToChannel(
 
         # extract channel features
         idxMax = numpy.argmax(y); posMax = x[idxMax] ###< peak position in ticks
-        std = (max(x) - min(x)) / 2
+        # std = (max(x) - min(x)) / 2.355
+        indices = numpy.where(y > 0.1 * max(y))[0]
+        std = (x[indices[-1]] - x[indices[0]]) / 2.355
 
         # perform Gaussian fit of channel
         try:
@@ -123,9 +141,10 @@ def GaussianFitToChannel(
             )
             errs = numpy.sqrt(numpy.diag(covs))
         except RuntimeError:
-            print("Could not perform fit here: ", MeasurementPath)
-            pars = numpy.zeros(NCHs)
-            errs = numpy.zeros(NCHs)
+            print(f"Could not perform fit here: {MeasurementPath}")
+            print(f"Initial guesses: {idxMax}, {std}")
+            pars = numpy.ones(3)
+            errs = numpy.ones(3)
 
         if debug:
             print(f"Peak position: {posMax}")

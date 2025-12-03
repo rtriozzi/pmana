@@ -49,10 +49,7 @@ def FormatPadovaData(
 
         # create directory for the corresponding measurement
         MeasurementDirectory = TargetPath/MeasurementNumber
-        MeasurementDirectory.mkdir(
-            parents = True, 
-            exist_ok = True
-        )
+        MeasurementDirectory.mkdir(parents=True, exist_ok=True)
 
         # copy the file
         shutil.copy(
@@ -62,8 +59,67 @@ def FormatPadovaData(
 
     return None
 
+def FormatDT5781Data(
+    InputPath,
+    TargetPath,
+    REGEXSTRING = r"_(\d{8}_\d{6})\.txt3$" ###< or r"(?:.*_)?([^_]+_[^_]+)\.txt3$" 
+):
+    """
+        Organize data files from the CAEN DT5781 into 
+        folders named by their timestamp.
+
+        Example filename:
+        CH0@DT5781_-6842_Espectrum_run_20251124_163026.txt3
+                                        ^^^^^^^^^^^^^^^ <- timestamp
+
+        Input
+        ---
+        InputPath : str
+                    Input filesystem path.
+
+        TargetPath : str
+                     Target filesystem path.
+
+        REGEXSTRING : str, optional
+                      Regex for extracting the timestamp (default matches YYYYMMDD_HHMMSS).
+
+        Output
+        ---
+        Creates a structured directory. Returns None.
+    """
+
+    InputPath = pathlib.Path(InputPath)
+    TargetPath = pathlib.Path(TargetPath)
+
+    # loop over the files in the flat data directory
+    for FilePath in InputPath.glob("*.txt3"):
+
+        # extract measurement time from filename via regex
+        FileName = FilePath.name
+        match = re.search(REGEXSTRING, FileName)
+        if not match:
+            print(f"Skipping unrecognized file: {FileName}")
+            continue
+        Timestamp = match.group(1)  ###< e.g., "20251124_163026"
+
+        # create directory for the corresponding measurement
+        TimestampDir = TargetPath/Timestamp
+        TimestampDir.mkdir(parents=True, exist_ok=True)
+
+        # copy the file
+        shutil.copy(
+            FilePath, 
+            TimestampDir / FileName
+        )
+
+    return None
+
 def ExtractSingleMeasurement(
-    FilePath
+    FilePath,
+    CHANNEL_KEY = 'F*',
+    N_SKIP_LINES = 5,
+    COL_NAMES = ['BinCenter', 'Population'],
+    DELIMITER = ';'
 ):
     """
         Input
@@ -78,11 +134,11 @@ def ExtractSingleMeasurement(
     """
 
     # Find and sort all files starting with 'F'
-    FileList = sorted(glob.glob(os.path.join(FilePath, 'F*')))
+    FileList = sorted(glob.glob(os.path.join(FilePath, CHANNEL_KEY)))
 
     # Read all files into a list of DataFrames
     Data = [
-        pandas.read_csv(f, skiprows=5, names=['BinCenter', 'Population'], delimiter=';')
+        pandas.read_csv(f, skiprows=N_SKIP_LINES, names=COL_NAMES, delimiter=DELIMITER)
         for f in FileList
     ]
 

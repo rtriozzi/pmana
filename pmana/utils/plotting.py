@@ -49,6 +49,8 @@ def PlotSingleChannel(
     channel = 0,
     rebin = False,
     debug = False,
+    DISPLAY_FIT = True,
+    SKIP_NROWS = 0,
     BINNAME = 'BinCenter',
     COUNTNAME = 'Population'
 ):
@@ -74,8 +76,12 @@ def PlotSingleChannel(
         ---
         Output:
 
-        Plot the channel data.
+        Plot the channel data. Returns None.
     """
+
+    if SKIP_NROWS > 0:
+        print(f"Skipping the first {SKIP_NROWS} rows.")
+        CHData = CHData.iloc[SKIP_NROWS:].reset_index(drop=True)
 
     # adaptively extract bin edges
     Diffs = numpy.diff(sorted(CHData[BINNAME]))
@@ -91,32 +97,44 @@ def PlotSingleChannel(
         weights = CHData[COUNTNAME],
         alpha=0.5,
         histtype='stepfilled',
-        label=f'F{channel}',
+        label=f'CH{channel}',
         fc=f'C{channel}',
         ec=f'C{channel}'
     )
     x = (bins[:-1] + bins[1:]) / 2
 
-    # extract channel features
-    idxMax = numpy.argmax(y); posMax = x[idxMax] ###< peak position in ticks
-    std = (max(x) - min(x)) / 2
+    if DISPLAY_FIT:
+        # extract channel features
+        idxMax = numpy.argmax(y); posMax = x[idxMax] ###< peak position in ticks
+        # std = (max(x) - min(x)) / 2.355
+        indices = numpy.where(y > 0.1 * max(y))[0]
+        std = (x[indices[-1]] - x[indices[0]]) / 2.355
 
-    # perform Gaussian fit of channel
-    pars, covs = scipy.optimize.curve_fit(
-        Gaus, 
-        x,
-        y,
-        p0 = (numpy.max(CHData[COUNTNAME]), posMax, std),
-        maxfev=1000
-    )
-    if debug:
-        print(f"Peak position: {posMax}")
-        print(f"Candidate std. deviation: {std}")
-        print(f"Fit parameters: {pars}")
+        # perform Gaussian fit of channel
+        try:
+            pars, covs = scipy.optimize.curve_fit(
+                Gaus, 
+                x,
+                y,
+                p0 = (numpy.max(CHData[COUNTNAME]), posMax, std),
+                maxfev=1000
+            )
+        except RuntimeError:
+            print(f"Could not perform fit for channel {channel}.")
+            print(f"Initial guesses: {idxMax}, {std}")
+            pars = numpy.ones(3)
+            errs = numpy.ones(3)
+        
+        if debug:
+            print(f"Peak position: {posMax}")
+            print(f"Candidate std. deviation: {std}")
+            print(f"Fit parameters: {pars}")
 
-    # plot fit
-    ax.plot(
-        x,
-        Gaus(x, *pars),
-        c=f'C{channel}'
-    )
+        # plot fit
+        ax.plot(
+            x,
+            Gaus(x, *pars),
+            c=f'C{channel}'
+        )
+
+    return None
