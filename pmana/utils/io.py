@@ -36,6 +36,9 @@ def FormatPadovaData(
     InputPath = pathlib.Path(InputPath)
     TargetPath = pathlib.Path(TargetPath)
 
+    if not InputPath.exists() or not InputPath.is_dir():
+        print(f"Input path {InputPath} does not exist or you don't have access.")
+
     # loop over the files in the flat data directory
     for FilePath in InputPath.glob("*.txt"):
 
@@ -91,6 +94,9 @@ def FormatDT5781Data(
     InputPath = pathlib.Path(InputPath)
     TargetPath = pathlib.Path(TargetPath)
 
+    if not InputPath.exists() or not InputPath.is_dir():
+        print(f"Input path {InputPath} does not exist or you don't have access.")
+
     # loop over the files in the flat data directory
     for FilePath in InputPath.glob("*.txt3"):
 
@@ -113,6 +119,133 @@ def FormatDT5781Data(
         )
 
     return None
+
+def FormatDT5781RawData(
+    InputPath,
+    TargetPath,
+    REGEXSTRING = r"DataR_CH(\d+)@DT5781_.*\.CSV$"
+):
+    """
+        Organize raw CSV data files from the CAEN DT5781 into 
+        folders named by their timestamp.
+        Raw data files provide an energy measurement and a timestamp 
+        in picoseconds per channel, and can be grouped as one wants.
+        Since there are a lot of measurements, files are chopped
+        at a configurable rate (e.g., every 10 MB).
+
+        Example filename:
+        DataR_CH0@DT5781_-6842_run.CSV
+
+        Input
+        ---
+        InputPath : str
+                    Input filesystem path.
+
+        TargetPath : str
+                     Target filesystem path.
+
+        REGEXSTRING : str, optional
+                      Regex used to extract the channel number.
+                      Default extracts the "CHX" from filenames 
+                      like DataR_CH1@DT5781_... 
+
+        Output
+        ---
+        Creates a structured directory. Returns None.
+    """
+
+    InputPath = pathlib.Path(InputPath)
+    TargetPath = pathlib.Path(TargetPath)
+
+    if not InputPath.exists() or not InputPath.is_dir():
+        print(f"Input path {InputPath} does not exist or you don't have access.")
+
+    # loop over the files in the flat data directory
+    for FilePath in InputPath.glob("*.CSV"): 
+
+        FileName = FilePath.name
+
+        # extract channel number via regex
+        match = re.search(REGEXSTRING, FileName)
+        if not match:
+            print(f"Skipping unrecognized file: {FileName}")
+            continue
+
+        ChannelNumber = match.group(1)  # e.g., "0", "1", ...
+
+        # create directory for this channel
+        ChannelDir = TargetPath / f"CH{ChannelNumber}"
+        ChannelDir.mkdir(parents=True, exist_ok=True)
+
+        # copy the file
+        shutil.copy(
+            FilePath,
+            ChannelDir / FileName
+        )
+
+    return None
+
+def PandasizeDT5781RawData(
+    ChannelPath,
+    N_SKIP_LINES = 2,
+    COL_NAMES = ['board', 'channel', 'timetag', 'energy', 'flags'],
+    DELIMITER = ';',
+    TIME_VAR = 'timetag'
+):
+    """
+        Extract a pandas dataframe from the raw CSV data files,
+        for a given channel.
+
+        Input
+        ---
+        ChannelPath : str
+                      Input filesystem path with raw CSV channel data.
+
+        Output
+        ---
+        Returns a Pandas dataframe.
+    """
+
+    ChannelPath = pathlib.Path(ChannelPath)
+    dfs = []
+
+    # merge all chopped raw data files into a df
+    for ChannelData in ChannelPath.glob("*.CSV"): 
+        df = pandas.read_csv(
+            ChannelData, 
+            skiprows=N_SKIP_LINES, names=COL_NAMES, delimiter=DELIMITER
+        )
+        dfs.append(df)
+    channel_df = pandas.concat(dfs, ignore_index=True)
+
+    # sort by time and add progressive time in seconds
+    channel_df[TIME_VAR] = channel_df[TIME_VAR].astype(int)
+    channel_df = channel_df.sort_values(TIME_VAR).reset_index(drop=True)
+    channel_df['time'] = (channel_df[TIME_VAR] - channel_df[TIME_VAR].iloc[0]) * 1.e-12 ###< [s]
+
+    # handle types sensibly
+    channel_df['flags'] = channel_df['flags'].apply(
+        lambda x: int(x, 16) if pandas.notna(x) else -1
+    )
+    channel_df['energy'] = channel_df['energy'].apply(
+        lambda x: int(x) if pandas.notna(x) else -1
+    )
+
+    # clean this up, just a bit
+    channel_df = channel_df[channel_df['energy'] > -1]
+
+    # create time bins with various flavors
+    channel_df['time_bin_1min']  = (channel_df['time'] // 60).astype(int)
+    channel_df['time_bin_5min']  = (channel_df['time'] // 300).astype(int)
+    channel_df['time_bin_10min'] = (channel_df['time'] // 600).astype(int)
+    channel_df['time_bin_30min'] = (channel_df['time'] // 1800).astype(int)
+
+    # pickle this up
+    PATH = str(ChannelPath) + "/" + ChannelPath.name + ".pkl"
+    channel_df.to_pickle(PATH)
+    print(f"Saved merged DataFrame to: {PATH}")
+
+    return channel_df
 
 def ExtractSingleMeasurement(
     FilePath,

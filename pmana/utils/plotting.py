@@ -3,6 +3,90 @@ import scipy
 
 from pmana.utils.fitting import Gaus
 
+def PlotTimeSeriesWithErrors(
+    ax,
+    Date,
+    Peak,
+    PeakError,
+    LABEL = '',
+    XLABELS = True
+):
+
+    """
+        Plot a time series with errors on y.
+
+        ---
+        Input:
+
+        ax: matplotlib axes obj
+            Axes whose settings need to be tweaked.
+        
+        Date: array-like
+              Data for the x axis.
+
+        Peak: array-like
+              Data for the y axis.
+
+        PeakError: array-like
+                   Errors for data for the y axis.
+              
+        ---
+        Output:     
+
+        Updated matplotlib axes.           
+    """
+
+    ax.plot(
+        Date, Peak, 
+        lw=1
+    )
+    ax.fill_between(
+        Date, Peak-PeakError, Peak+PeakError, 
+        alpha=0.3, label=LABEL
+    )
+    if not XLABELS:
+        ax.set_xticklabels([])
+
+    return ax
+
+def PlotTimeSeries(
+    ax,
+    Date,
+    Peak,
+    LABEL = '',
+    XLABELS = True
+):
+
+    """
+        Plot a time series with errors on y.
+
+        ---
+        Input:
+
+        ax: matplotlib axes obj
+            Axes whose settings need to be tweaked.
+        
+        Date: array-like
+              Data for the x axis.
+
+        Peak: array-like
+              Data for the y axis.
+              
+        ---
+        Output:     
+
+        Updated matplotlib axes.           
+    """
+
+    ax.plot(
+        Date, Peak, 
+        lw=1, label=LABEL
+    )
+    if not XLABELS:
+        ax.set_xticklabels([])
+
+    return ax
+
 def UpdateMatplotlibStyle(
     ax,
     xlabel,
