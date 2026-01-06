@@ -63,11 +63,70 @@ def Iterate(
 
     return Output
 
+def IterateCERN(
+    CampaignPath,
+    Analyze,
+    YEAR = 2025,
+    MONTH = 12
+):
+    """
+        In the CERN data structure, directory tells the time.
+        Measurements are orgainzed in days, hour, minutes.
+
+        Input
+        ---
+        CampaignPath :  str
+                        Filesystem path containing measurements.
+        
+        Analyze : function
+                  Analyzer function acting on a measurement.
+
+        Output
+        ---
+        Provides an array with the results.
+    """
+
+    CampaignPath = pathlib.Path(CampaignPath)
+
+    Output = []
+
+    # days
+    for DayPath in CampaignPath.glob('*'):
+        if not os.path.basename(DayPath).isnumeric():
+            continue 
+        Day = int(os.path.basename(DayPath))
+
+        # hours
+        for HourPath in DayPath.glob("*"):
+            Hour = int(os.path.basename(HourPath))
+
+            # minutes
+            for MinutePath in HourPath.glob("*"):
+                Minute = int(os.path.basename(MinutePath))
+
+                # analyze the measurement
+                CHOutput = Analyze(MinutePath)
+
+                ### extract date
+                t = datetime.datetime(
+                    year = YEAR, 
+                    month = MONTH, 
+                    day = Day, 
+                    hour = Hour, 
+                    minute = Minute)
+
+                CHOutput.extend([t])
+                Output.append(CHOutput)
+                
+    return Output
+
 def GaussianFitToChannel(
     MeasurementPath,
     rebin = False,
     debug = False,
     IS_DT5781 = False,
+    DELIMITER = ';',
+    MASK_TESTPULSE = False,
     SKIP_NROWS = 0,
     BINNAME = 'BinCenter',
     COUNTNAME = 'Population'
@@ -94,7 +153,7 @@ def GaussianFitToChannel(
         ---
         Provides a Pandas dataframe with the results.
     """
-    
+
     Output = []
 
     # extract measurement data
@@ -102,13 +161,26 @@ def GaussianFitToChannel(
         Data = ExtractSingleMeasurement(MeasurementPath,
             CHANNEL_KEY = 'CH*', N_SKIP_LINES = 3, COL_NAMES = ['c0', 'c1', 'c2'], DELIMITER = ' ')
     else:
-        Data = ExtractSingleMeasurement(MeasurementPath)
+        Data = ExtractSingleMeasurement(MeasurementPath,
+            DELIMITER = DELIMITER)
 
-    for CHData in Data:
+    if debug:
+        print(f"[Analyze] Extracted {len(Data)} channels")
+
+    for i, CHData in enumerate(Data):
 
         if SKIP_NROWS > 0:
             CHData = CHData.iloc[SKIP_NROWS:].reset_index(drop=True)
 
+        # dedicated test-pulse analysis        
+        if MASK_TESTPULSE:
+            if i is not 2:
+                CHData = CHData[CHData[BINNAME] > 1.25].reset_index(drop=True)
+
+        # avoid empty channels
+        if len(CHData) < 10:
+            continue
+        
         # adaptively extract bin edges
         Diffs = numpy.diff(sorted(CHData[BINNAME]))
         BinWidth = round(numpy.median(Diffs), 6)
@@ -141,15 +213,15 @@ def GaussianFitToChannel(
             )
             errs = numpy.sqrt(numpy.diag(covs))
         except RuntimeError:
-            print(f"Could not perform fit here: {MeasurementPath}")
-            print(f"Initial guesses: {idxMax}, {std}")
+            print(f"[Analyze] Could not perform fit here: {MeasurementPath}, {i}")
+            print(f"[Analyze] Initial guesses: {idxMax}, {std}")
             pars = numpy.ones(3)
             errs = numpy.ones(3)
 
         if debug:
-            print(f"Peak position: {posMax}")
-            print(f"Candidate std. deviation: {std}")
-            print(f"Fit parameters: {pars}")
+            print(f"[Analyze] Peak position: {posMax}")
+            print(f"[Analyze] Candidate std. deviation: {std}")
+            print(f"[Analyze] Fit parameters: {pars}")
 
         Output.append(pars[1]) ###< peak
         Output.append(errs[1]) ###< peak error

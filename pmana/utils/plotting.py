@@ -126,7 +126,6 @@ def UpdateMatplotlibStyle(
 
     return ax
     
-
 def PlotSingleChannel(
     CHData,
     ax,
@@ -180,10 +179,10 @@ def PlotSingleChannel(
         bins = BinEdges,
         weights = CHData[COUNTNAME],
         alpha=0.5,
-        histtype='stepfilled',
-        label=f'CH{channel}',
-        fc=f'C{channel}',
-        ec=f'C{channel}'
+        histtype="stepfilled",
+        label=f"CH{channel}",
+        fc=f"C{channel}",
+        ec=f"C{channel}"
     )
     x = (bins[:-1] + bins[1:]) / 2
 

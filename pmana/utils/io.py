@@ -320,8 +320,8 @@ def ExtractFileTimes(
 
 def ExtractTemperatureMonitoring(
     TemperatureLog,
-    DELIMITER = ' ',
-    COL_NAMES = ['DateRaw', 'Time', 'T1', 'T2']
+    IsPadova = True,
+    **kwargs
 ):
     """
         Extracts the temperatures from a dedicated monitor,
@@ -333,11 +333,11 @@ def ExtractTemperatureMonitoring(
                         Temperature log file.
                         Needs a bit of formatting by hand.
 
-        DELIMITER: str, optional
-                   Delimiter to extract dataframe from txt file.
-
-        COL_NAMES: array of str, optional
-                   The variables in the input txt files.
+        **kwargs: arguments or dict-like
+                  Keyword arguments forwarded to pandas.read_csv.
+                  Defaults:
+                    delimiter = " "
+                    names = ["DateRaw", "Time", "T1", "T2"]
 
         Output
         ---
@@ -345,13 +345,23 @@ def ExtractTemperatureMonitoring(
         from all available sensors.
     """
 
+    defaults = dict(
+        delimiter = " ",
+        names = ["DateRaw", "Time", "T1", "T2"],
+        engine = "python",
+    )
+    kwargs = {**defaults, **kwargs}
+
     FileTemperatures = pandas.read_csv(
         TemperatureLog,
-        delimiter = DELIMITER,
-        engine = 'python',
-        names = COL_NAMES
+        **kwargs
     )
-    FileTemperatures['Date'] = pandas.to_datetime(FileTemperatures['DateRaw'] + ' ' + FileTemperatures['Time'], format='%d.%m.%Y %H:%M')
-    FileTemperatures['Date_Shifted'] = FileTemperatures['Date'] + pandas.Timedelta(minutes=12) ###< Known delay
+
+    if IsPadova:
+        FileTemperatures['Date'] = pandas.to_datetime(
+            FileTemperatures['DateRaw'] + ' ' + FileTemperatures['Time'], 
+            format='%d.%m.%Y %H:%M'
+        )
+        FileTemperatures['Date_Shifted'] = FileTemperatures['Date'] + pandas.Timedelta(minutes=12) ###< Known delay
 
     return FileTemperatures
