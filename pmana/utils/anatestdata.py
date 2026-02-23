@@ -174,7 +174,7 @@ def GaussianFitToChannel(
 
         # dedicated test-pulse analysis        
         if MASK_TESTPULSE:
-            if i is not 2:
+            if i != 2:
                 CHData = CHData[CHData[BINNAME] > 1.25].reset_index(drop=True)
 
         # avoid empty channels
@@ -198,8 +198,14 @@ def GaussianFitToChannel(
 
         # extract channel features
         idxMax = numpy.argmax(y); posMax = x[idxMax] ###< peak position in ticks
-        # std = (max(x) - min(x)) / 2.355
+
         indices = numpy.where(y > 0.1 * max(y))[0]
+        if len(indices) < 2:
+            if debug:
+                print(f"[Analyze] Channel {i}: insufficient bins above threshold, skipping")
+            Output.extend([numpy.nan, numpy.nan, numpy.nan, numpy.nan])
+            continue
+
         std = (x[indices[-1]] - x[indices[0]]) / 2.355
 
         # perform Gaussian fit of channel
@@ -215,8 +221,8 @@ def GaussianFitToChannel(
         except RuntimeError:
             print(f"[Analyze] Could not perform fit here: {MeasurementPath}, {i}")
             print(f"[Analyze] Initial guesses: {idxMax}, {std}")
-            pars = numpy.ones(3)
-            errs = numpy.ones(3)
+            pars = [numpy.nan, numpy.nan, numpy.nan]
+            pars = [numpy.nan, numpy.nan, numpy.nan]
 
         if debug:
             print(f"[Analyze] Peak position: {posMax}")
