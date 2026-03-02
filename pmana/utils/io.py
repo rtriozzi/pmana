@@ -249,6 +249,7 @@ def PandasizeDT5781RawData(
 
 def ExtractSingleMeasurement(
     FilePath,
+    IS_CSV = False,
     CHANNEL_KEY = 'F*',
     N_SKIP_LINES = 5,
     COL_NAMES = ['BinCenter', 'Population'],
@@ -260,21 +261,32 @@ def ExtractSingleMeasurement(
         FilePath : str
                    File name with path.
 
+        IS_CSV : bool
+                 Whether to expect a CSV file, 
+                 e.g., from CERN data starting Jan. 2026.
+
         Output
         ---
         Provides channel data to be analyzed or plotted.
         Returns a list of dataframes.
     """
 
-    # Find and sort all files starting with 'F'
-    FileList = sorted(glob.glob(os.path.join(FilePath, CHANNEL_KEY)))
+    if not IS_CSV:
+        # Find and sort all files starting with 'F'
+        FileList = sorted(glob.glob(os.path.join(FilePath, CHANNEL_KEY)))
 
-    # Read all files into a list of DataFrames
-    Data = [
-        pandas.read_csv(f, skiprows=N_SKIP_LINES, names=COL_NAMES, delimiter=DELIMITER)
-        for f in FileList
-    ]
+        # Read all files into a list of DataFrames
+        Data = [
+            pandas.read_csv(f, skiprows=N_SKIP_LINES, names=COL_NAMES, delimiter=DELIMITER)
+            for f in FileList
+        ]
+    else:
+        DataAll = pandas.read_csv(FilePath, names=COL_NAMES, delimiter=DELIMITER, skiprows=1)
 
+        Data = [
+            DataAll[[COL_NAMES[0], col]].rename(columns={COL_NAMES[0] : 'BinCenter', col : 'Population'})
+            for col in COL_NAMES[1:]
+        ]
     return Data
 
 def ExtractFileTimes(
