@@ -10,8 +10,8 @@ ANALYSIS_CONFIGURATION = {
     'InnerShortChannel'         : 3,
     'OuterShortChannel'         : 2,  
     'ShortGausFitLimits'        : (0.15, 0.15),
-    'LongGausFitLimits'         : (0.15, 0.15),
-    'ComptonSearchLimits'       : (0.4, 1),
+    'LongGausFitLimits'         : (0.1, 0.15),
+    'ComptonSearchLimits'       : (0.5, 1),
     'MinComptonSearchLowLimit'  : 0.25,
     'ComptonMode'               : 'rising'
 }
@@ -20,6 +20,7 @@ def ExtractICPeak(
     MeasurementPath,
     CALIBRATION_FACTORS,
     PM_TAG = 'Long',
+    SAVE_SPECTRA = False,
     ANALYSIS_CONFIGURATION = ANALYSIS_CONFIGURATION
 ):
 
@@ -109,4 +110,7 @@ def ExtractICPeak(
     ) 
     errs = numpy.sqrt(numpy.diag(covs))
 
-    return [pars[1], errs[1], ScalingFactor]
+    if not SAVE_SPECTRA:
+        return [pars[1], errs[1], ScalingFactor]
+    else:
+        return [pars[1], errs[1], ScalingFactor, numpy.array(xIC).astype(float), numpy.array(IC).astype(float)]
