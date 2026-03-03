@@ -13,7 +13,9 @@ ANALYSIS_CONFIGURATION = {
     'LongGausFitLimits'         : (0.1, 0.15),
     'ComptonSearchLimits'       : (0.5, 1),
     'MinComptonSearchLowLimit'  : 0.25,
-    'ComptonMode'               : 'rising'
+    'ComptonMode'               : 'rising',
+    'LongICPeakSearchLimits'    : (0.4, 1),
+    'ShortICPeakSearchLimits'   : (0.4, 1),
 }
 
 def ExtractICPeak(
@@ -98,8 +100,11 @@ def ExtractICPeak(
     IC[IC < 0] = 0.
 
     # extract IC peak
-    IC_Pos_Idx = numpy.argmax(IC[xIC > 0.4]) + numpy.where(xIC > 0.4)[0][0]
+    IC_PEAK_LIMITS = ANALYSIS_CONFIGURATION[f'{PM_TAG}ICPeakSearchLimits']
+    IC_Pos_Idx = numpy.where((xIC >= IC_PEAK_LIMITS[0]) & (xIC <= IC_PEAK_LIMITS[1]))[0][numpy.argmax(IC[(xIC >= IC_PEAK_LIMITS[0]) & (xIC <= IC_PEAK_LIMITS[1])])]
     IC_Pos = xIC[IC_Pos_Idx] 
+
+    # fit the IC peak
     GAUS_FIT_LIMITS = ANALYSIS_CONFIGURATION[f'{PM_TAG}GausFitLimits']
     pars, covs = scipy.optimize.curve_fit(
         Gaus, 
