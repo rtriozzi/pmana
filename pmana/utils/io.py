@@ -272,21 +272,24 @@ def ExtractSingleMeasurement(
     """
 
     if not IS_CSV:
-        # Find and sort all files starting with 'F'
+        # find and sort all files starting with 'F'
         FileList = sorted(glob.glob(os.path.join(FilePath, CHANNEL_KEY)))
 
-        # Read all files into a list of DataFrames
+        # read all files into a list of DataFrames
         Data = [
             pandas.read_csv(f, skiprows=N_SKIP_LINES, names=COL_NAMES, delimiter=DELIMITER)
             for f in FileList
         ]
     else:
+        # in the CSV format (as of March, 2026) all channels come from the same file
         DataAll = pandas.read_csv(FilePath, names=COL_NAMES, delimiter=DELIMITER, skiprows=1)
 
+        # split into different dataframes, and bring everything back to the 'old' structure
         Data = [
             DataAll[[COL_NAMES[0], col]].rename(columns={COL_NAMES[0] : 'BinCenter', col : 'Population'})
             for col in COL_NAMES[1:]
         ]
+
     return Data
 
 def ExtractFileTimes(

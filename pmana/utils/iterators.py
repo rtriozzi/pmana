@@ -50,6 +50,7 @@ def IterateCERN_CSV(
         if START_FROM is not None and t < START_FROM:
             continue  
 
+        # skip problematic dates...
         if EXCLUDE_DATE is not None and t in EXCLUDE_DATE:
             continue
         

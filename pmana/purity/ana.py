@@ -1,29 +1,17 @@
 import numpy
 import scipy
 
+from pmana.purity.config import DEFAULT_ANALYSIS_CONFIGURATION
+
 from pmana.utils.fitting import Gaus
 from pmana.utils.io import ExtractSingleMeasurement
-
-ANALYSIS_CONFIGURATION = {
-    'InnerLongChannel'          : 0,
-    'OuterLongChannel'          : 1,
-    'InnerShortChannel'         : 3,
-    'OuterShortChannel'         : 2,  
-    'ShortGausFitLimits'        : (0.15, 0.15),
-    'LongGausFitLimits'         : (0.1, 0.15),
-    'ComptonSearchLimits'       : (0.5, 1),
-    'MinComptonSearchLowLimit'  : 0.25,
-    'ComptonMode'               : 'rising',
-    'LongICPeakSearchLimits'    : (0.4, 1),
-    'ShortICPeakSearchLimits'   : (0.4, 1),
-}
 
 def ExtractICPeak(
     MeasurementPath,
     CALIBRATION_FACTORS,
     PM_TAG = 'Long',
     SAVE_SPECTRA = False,
-    ANALYSIS_CONFIGURATION = ANALYSIS_CONFIGURATION
+    ANALYSIS_CONFIGURATION = DEFAULT_ANALYSIS_CONFIGURATION
 ):
 
     """
@@ -104,7 +92,7 @@ def ExtractICPeak(
     IC_Pos_Idx = numpy.where((xIC >= IC_PEAK_LIMITS[0]) & (xIC <= IC_PEAK_LIMITS[1]))[0][numpy.argmax(IC[(xIC >= IC_PEAK_LIMITS[0]) & (xIC <= IC_PEAK_LIMITS[1])])]
     IC_Pos = xIC[IC_Pos_Idx] 
 
-    # fit the IC peak
+    # fit the IC peak around the identified max
     GAUS_FIT_LIMITS = ANALYSIS_CONFIGURATION[f'{PM_TAG}GausFitLimits']
     pars, covs = scipy.optimize.curve_fit(
         Gaus, 
