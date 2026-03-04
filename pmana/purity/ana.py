@@ -2,42 +2,54 @@ import numpy
 import scipy
 
 from pmana.purity.config import DEFAULT_ANALYSIS_CONFIGURATION
+from pmana.purity.config import DEFAULT_CALIBRATION_FACTORS
 
 from pmana.utils.fitting import Gaus
 from pmana.utils.io import ExtractSingleMeasurement
 
 def ExtractICPeak(
     MeasurementPath,
-    CALIBRATION_FACTORS,
     PM_TAG = 'Long',
     SAVE_SPECTRA = False,
+    CALIBRATION_FACTORS = DEFAULT_CALIBRATION_FACTORS,
     ANALYSIS_CONFIGURATION = DEFAULT_ANALYSIS_CONFIGURATION
 ):
 
     """
         Input
         ---
-        Data :  list of dataframes
-                list of Pandas dataframes, one for each channel,
-                with columns BinCenter and Population.
-        
+        MeasurementPath : str
+                          Path to data.
+
+        PM_TAG : str, `'Long'` or `'Short'`
+                 What Pr.M. to process, with varying analysis configurations.
+
+        SAVE_SPECTRA : bool
+                       Whether to save also the IC spectra to dataframe.
+
         CALIBRATION_FACTORS : dict
                               Mapping between channels and their calibration factors.
+                              Look in `pmana.purity.config` for defaults.
 
-        PM_TAG : str, 'Long' or 'Short'
-                 What PrM to process, with varying analysis configurations.
-
+        ANALYSIS_CONFIGURATION : dict
+                                 Some configuration parameters for analysis.
+                                 Look in `pmana.purity.config` for defaults.
         Output
         ---
         Provides the IC peak position, IC peak width, and inner-outer scaling factor.
+        Optionally provides the IC spectra.
     """
+
+    # verify Pr.M. tag
+    assert PM_TAG == 'Long' or PM_TAG == 'Short', \
+           "The PM_TAG you used is not supported. Use 'Long' or 'Short'."
 
     # get data
     Data = ExtractSingleMeasurement(
         MeasurementPath,
         IS_CSV = True,
         COL_NAMES = ['binCenter', 'F1', 'F2', 'F3', 'F4'],
-        DELIMITER = ","
+        DELIMITER = ','
     )
     print(f'Analyzing {MeasurementPath}...')
 

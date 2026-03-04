@@ -1,13 +1,27 @@
+# calibration factors, mapping readout 
+# channels to simple scaling factor
+DEFAULT_CALIBRATION_FACTORS = {
+  0: 1,
+  1: 1,
+  2: 1,
+  3: 1
+}
+
+# analysis configutaion, most importantly with
+# the mapping between physical channels and readout data;
+# some limits for analysis, which should be stable
+# but might need tuning based on data
 DEFAULT_ANALYSIS_CONFIGURATION = {
-    'InnerLongChannel'          : 0,
+    'InnerLongChannel'          : 0,            # mapping between readout channel and physical meaning
     'OuterLongChannel'          : 1,
     'InnerShortChannel'         : 3,
     'OuterShortChannel'         : 2,  
-    'ShortGausFitLimits'        : (0.15, 0.15),
-    'LongGausFitLimits'         : (0.1, 0.15),
-    'ComptonSearchLimits'       : (0.5, 1),
-    'MinComptonSearchLowLimit'  : 0.25,
-    'ComptonMode'               : 'rising',
-    'LongICPeakSearchLimits'    : (0.4, 1),
-    'ShortICPeakSearchLimits'   : (0.4, 1),
+    'ShortGausFitLimits'        : (0.15, 0.15), # fitting limits around the peak for the short Pr.M.
+    'LongGausFitLimits'         : (0.1, 0.15),  # fitting limits around the peak for the long Pr.M.
+    'ComptonSearchLimits'       : (0.5, 1),     # peak height window to look for the Compton edge
+    'MinComptonSearchLowLimit'  : 0.25,         # low limit when going backwards from the Compton edge to look for the valley
+    'ComptonMode'               : 'rising',     # how we extract the normalization between short and long
+                                                # default is `rising` (middle point between valley and Compton edge)
+    'LongICPeakSearchLimits'    : (0.4, 1),     # peak height window to look for the IC peak for the short Pr.M.
+    'ShortICPeakSearchLimits'   : (0.4, 1),     # peak height window to look for the IC peak for the long Pr.M.
 }
