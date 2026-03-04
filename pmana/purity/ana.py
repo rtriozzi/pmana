@@ -119,3 +119,19 @@ def ExtractICPeak(
         return [pars[1], errs[1], ScalingFactor]
     else:
         return [pars[1], errs[1], ScalingFactor, numpy.array(xIC).astype(float), numpy.array(IC).astype(float)]
+    
+
+def GetLifetime_SinglePrM(
+    ICPeak,
+    ICPeak_Asymptotic,
+    DRIFT_LENGTH = 200,     # mm
+    DRIFT_VELOCITY = 1.547  # mm / us
+):
+    
+    # drift time difference
+    dt = DRIFT_LENGTH / DRIFT_VELOCITY
+
+    # electron lifetime
+    lifetime = dt / numpy.log(ICPeak_Asymptotic / ICPeak)
+
+    return lifetime
