@@ -6,7 +6,9 @@ def IterateCERN_CSV(
     CampaignPath,
     Analyze,
     START_FROM = None,
-    EXCLUDE_DATE = None
+    END_AT = None,
+    EXCLUDE_DATE = None,
+    EXCLUDE_WINDOW = None
 ):
     """
         In the CERN data structure with CSV files, time can be
@@ -47,13 +49,21 @@ def IterateCERN_CSV(
             minute = int(minute))
         
         # skip everything before the cutoff...
-        if START_FROM is not None and t < START_FROM:
+        if START_FROM is not None and t <= START_FROM:
+            continue  
+
+        # skip everything after the cutoff...
+        if END_AT is not None and t >= END_AT:
             continue  
 
         # skip problematic dates...
         if EXCLUDE_DATE is not None and t in EXCLUDE_DATE:
             continue
         
+        # skip problematic dates in a window...
+        if EXCLUDE_WINDOW is not None and any(w[0] <= t <= w[1] for w in EXCLUDE_WINDOW):
+            continue
+
         # analyze the measurement
         CHOutput = Analyze(FilePath)
 

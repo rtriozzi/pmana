@@ -66,7 +66,7 @@ def ExtractICPeak(
     # identify the Compton edge on the outer channel
     COMPTON_SEARCH_LIMITS = ANALYSIS_CONFIGURATION[f'ComptonSearchLimits']
     ComptonEdgeIdx = numpy.argmax(yOuter[(Data[CH_OUTER]['BinCenter'] > COMPTON_SEARCH_LIMITS[0]) & (Data[CH_OUTER]['BinCenter'] < COMPTON_SEARCH_LIMITS[1])]) + numpy.where(Data[CH_OUTER]['BinCenter'] > COMPTON_SEARCH_LIMITS[0])[0][0]
-    ComptonEdge = Data[CH_OUTER]['BinCenter'][ComptonEdgeIdx]
+    ComptonEdge = Data[CH_OUTER]['BinCenter'].iloc[ComptonEdgeIdx]
 
     # identify the valley before the Compton edge
     MIN_COMPTON_SEARCH_LOW_LIM = ANALYSIS_CONFIGURATION[f'MinComptonSearchLowLimit']
@@ -102,7 +102,7 @@ def ExtractICPeak(
     # extract IC peak
     IC_PEAK_LIMITS = ANALYSIS_CONFIGURATION[f'{PM_TAG}ICPeakSearchLimits']
     IC_Pos_Idx = numpy.where((xIC >= IC_PEAK_LIMITS[0]) & (xIC <= IC_PEAK_LIMITS[1]))[0][numpy.argmax(IC[(xIC >= IC_PEAK_LIMITS[0]) & (xIC <= IC_PEAK_LIMITS[1])])]
-    IC_Pos = xIC[IC_Pos_Idx] 
+    IC_Pos = xIC.iloc[IC_Pos_Idx] 
 
     # fit the IC peak around the identified max
     GAUS_FIT_LIMITS = ANALYSIS_CONFIGURATION[f'{PM_TAG}GausFitLimits']
