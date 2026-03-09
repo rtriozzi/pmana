@@ -19,4 +19,6 @@ DEFAULT_ANALYSIS_CONFIGURATION = {
                                                 # default is `rising` (middle point between valley and Compton edge)
     'LongICPeakSearchLimits'    : (0.4, 1),     # peak height window to look for the IC peak for the short Pr.M.
     'ShortICPeakSearchLimits'   : (0.4, 1),     # peak height window to look for the IC peak for the long Pr.M.
+    'ShortAsymptoticICPeak'     : 0.6212959,    # asymptotic value for the peak of the short PrM
+    'LongAsymptoticICPeak'      : 0.6212427     # asymptotic value for the peak of the long PrM
 }
