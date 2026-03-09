@@ -125,8 +125,10 @@ def GaussianFitToChannel(
     rebin = False,
     debug = False,
     IS_DT5781 = False,
+    IS_CSV = False,
     DELIMITER = ';',
     MASK_TESTPULSE = False,
+    TESTPULSE_LOW_LIM = 1.25,
     SKIP_NROWS = 0,
     BINNAME = 'BinCenter',
     COUNTNAME = 'Population'
@@ -160,6 +162,13 @@ def GaussianFitToChannel(
     if IS_DT5781:
         Data = ExtractSingleMeasurement(MeasurementPath,
             CHANNEL_KEY = 'CH*', N_SKIP_LINES = 3, COL_NAMES = ['c0', 'c1', 'c2'], DELIMITER = ' ')
+    if not IS_DT5781 and IS_CSV:
+        Data = ExtractSingleMeasurement(
+            MeasurementPath,
+            IS_CSV = True,
+            COL_NAMES = ['binCenter', 'F1', 'F2', 'F3', 'F4'],
+            DELIMITER = ','
+        )
     else:
         Data = ExtractSingleMeasurement(MeasurementPath,
             DELIMITER = DELIMITER)
@@ -174,8 +183,7 @@ def GaussianFitToChannel(
 
         # dedicated test-pulse analysis        
         if MASK_TESTPULSE:
-            if i != 2:
-                CHData = CHData[CHData[BINNAME] > 1.25].reset_index(drop=True)
+            CHData = CHData[CHData[BINNAME] > TESTPULSE_LOW_LIM].reset_index(drop=True)
 
         # avoid empty channels
         if len(CHData) < 10:
