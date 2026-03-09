@@ -134,21 +134,6 @@ def GetLifetime_SinglePrM(
     return lifetime
 
 def GetLifetime_DoublePrM(
-    ICPeak,
-    ICPeak_Asymptotic,
-    DRIFT_LENGTH = 200,     # mm
-    DRIFT_VELOCITY = 1.547  # mm / us
-):
-    
-    # drift time difference
-    dt = DRIFT_LENGTH / DRIFT_VELOCITY
-
-    # electron lifetime
-    lifetime = dt / numpy.log(ICPeak_Asymptotic / ICPeak)
-
-    return lifetime
-
-def GetLifetime_DoublePrM(
     ICPeak_Short,
     ICPeak_Long,
     ICPeak_Short_err = None,

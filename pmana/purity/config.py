@@ -1,7 +1,7 @@
 # analysis configutaion, most importantly with
 # the mapping between physical channels and readout data;
 # some limits for analysis, which should be stable
-# but might need tuning based on data
+# but might need tuning based on data and liquid argon purities
 DEFAULT_ANALYSIS_CONFIGURATION = {
     'InnerLongChannel'          : 0,            # mapping between readout channel and physical meaning
     'OuterLongChannel'          : 1,

@@ -202,6 +202,7 @@ def PlotSingleChannel(
                 p0 = (numpy.max(CHData[COUNTNAME]), posMax, std),
                 maxfev=1000
             )
+            errs = numpy.sqrt(numpy.diag(covs))
         except RuntimeError:
             print(f"Could not perform fit for channel {channel}.")
             print(f"Initial guesses: {idxMax}, {std}")
@@ -212,6 +213,7 @@ def PlotSingleChannel(
             print(f"Peak position: {posMax}")
             print(f"Candidate std. deviation: {std}")
             print(f"Fit parameters: {pars}")
+            print(f"Fit parameter errors: {errs}")
 
         # plot fit
         ax.plot(
