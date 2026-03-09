@@ -2,7 +2,6 @@ import numpy
 import scipy
 
 from pmana.purity.config import DEFAULT_ANALYSIS_CONFIGURATION
-from pmana.purity.config import DEFAULT_CALIBRATION_FACTORS
 
 from pmana.utils.fitting import Gaus
 from pmana.utils.io import ExtractSingleMeasurement
@@ -11,7 +10,6 @@ def ExtractICPeak(
     MeasurementPath,
     PM_TAG = 'Long',
     SAVE_SPECTRA = False,
-    CALIBRATION_FACTORS = DEFAULT_CALIBRATION_FACTORS,
     ANALYSIS_CONFIGURATION = DEFAULT_ANALYSIS_CONFIGURATION
 ):
 
@@ -56,12 +54,12 @@ def ExtractICPeak(
     # get inner anode
     CH_INNER = ANALYSIS_CONFIGURATION[f'Inner{PM_TAG}Channel']
     Interp = scipy.interpolate.interp1d(Data[CH_INNER]['BinCenter'], Data[CH_INNER]['Population'], kind='linear', bounds_error=False, fill_value=0)
-    yInner = Interp(Data[CH_INNER]['BinCenter'] / CALIBRATION_FACTORS[CH_INNER])   
+    yInner = Interp(Data[CH_INNER]['BinCenter'] / ANALYSIS_CONFIGURATION[f'Inner{PM_TAG}Calibration'])   
 
     # get outer anode
     CH_OUTER = ANALYSIS_CONFIGURATION[f'Outer{PM_TAG}Channel']
     Interp = scipy.interpolate.interp1d(Data[CH_OUTER]['BinCenter'], Data[CH_OUTER]['Population'], kind='linear', bounds_error=False, fill_value=0)
-    yOuter = Interp(Data[CH_OUTER]['BinCenter'] / CALIBRATION_FACTORS[CH_OUTER])     
+    yOuter = Interp(Data[CH_OUTER]['BinCenter'] / ANALYSIS_CONFIGURATION[f'Outer{PM_TAG}Calibration'])     
 
     # identify the Compton edge on the outer channel
     COMPTON_SEARCH_LIMITS = ANALYSIS_CONFIGURATION[f'ComptonSearchLimits']
@@ -120,7 +118,6 @@ def ExtractICPeak(
     else:
         return [pars[1], errs[1], ScalingFactor, numpy.array(xIC).astype(float), numpy.array(IC).astype(float)]
     
-
 def GetLifetime_SinglePrM(
     ICPeak,
     ICPeak_Asymptotic,
@@ -135,3 +132,47 @@ def GetLifetime_SinglePrM(
     lifetime = dt / numpy.log(ICPeak_Asymptotic / ICPeak)
 
     return lifetime
+
+def GetLifetime_DoublePrM(
+    ICPeak,
+    ICPeak_Asymptotic,
+    DRIFT_LENGTH = 200,     # mm
+    DRIFT_VELOCITY = 1.547  # mm / us
+):
+    
+    # drift time difference
+    dt = DRIFT_LENGTH / DRIFT_VELOCITY
+
+    # electron lifetime
+    lifetime = dt / numpy.log(ICPeak_Asymptotic / ICPeak)
+
+    return lifetime
+
+def GetLifetime_DoublePrM(
+    ICPeak_Short,
+    ICPeak_Long,
+    ICPeak_Short_err = None,
+    ICPeak_Long_err = None,
+    SHORT_DRIFT_LENGTH = 40,    # mm
+    LONG_DRIFT_LENGTH = 500,    # mm
+    DRIFT_VELOCITY = 1.547      # mm / us
+):
+
+    # drift time difference
+    dt = (SHORT_DRIFT_LENGTH - LONG_DRIFT_LENGTH) / DRIFT_VELOCITY
+
+    # electron lifetime
+    lifetime = dt / numpy.log(ICPeak_Long / ICPeak_Short)
+
+    if ICPeak_Short_err is None or ICPeak_Long_err is None:
+        return lifetime
+
+    # error on the lifetime
+    lifetime_err = abs(dt) \
+                 / (numpy.log(ICPeak_Long / ICPeak_Short)**2)  \
+                 * numpy.sqrt(
+                        pow(ICPeak_Long_err / ICPeak_Long, 2) +
+                        pow(ICPeak_Short_err / ICPeak_Short, 2)
+                 )
+
+    return lifetime, lifetime_err

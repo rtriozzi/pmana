@@ -1,12 +1,3 @@
-# calibration factors, mapping readout 
-# channels to simple scaling factor
-DEFAULT_CALIBRATION_FACTORS = {
-  0: 1,
-  1: 1,
-  2: 1,
-  3: 1
-}
-
 # analysis configutaion, most importantly with
 # the mapping between physical channels and readout data;
 # some limits for analysis, which should be stable
@@ -16,6 +7,10 @@ DEFAULT_ANALYSIS_CONFIGURATION = {
     'OuterLongChannel'          : 1,
     'InnerShortChannel'         : 3,
     'OuterShortChannel'         : 2,  
+    'InnerLongCalibration'      : 1.,           # multiplicative calibration factors
+    'OuterLongCalibration'      : 1.,      
+    'InnerShortCalibration'     : 1.,
+    'OuterShortCalibration'     : 1.,
     'ShortGausFitLimits'        : (0.15, 0.15), # fitting limits around the peak for the short Pr.M.
     'LongGausFitLimits'         : (0.1, 0.15),  # fitting limits around the peak for the long Pr.M.
     'ComptonSearchLimits'       : (0.5, 1),     # peak height window to look for the Compton edge
