@@ -117,7 +117,25 @@ def ExtractICPeak(
         return [pars[1], errs[1], ScalingFactor]
     else:
         return [pars[1], errs[1], ScalingFactor, numpy.array(xIC).astype(float), numpy.array(IC).astype(float)]
-    
+
+def GetAsymptoticPrMVoltage(
+    ShortIC,
+    LongIC,
+    e,
+    ANALYSIS_CONFIGURATION = DEFAULT_ANALYSIS_CONFIGURATION
+):
+
+    DRIFT_VELOCITY = 1.568
+    DRIFT_TIME_SHORT = ANALYSIS_CONFIGURATION['ShortDrift'] / DRIFT_VELOCITY
+    DRIFT_TIME_LONG = ANALYSIS_CONFIGURATION['LongDrift']  / DRIFT_VELOCITY
+
+    # asymptotic charges
+    ratio    = numpy.log(LongIC / ShortIC) / (DRIFT_TIME_LONG - DRIFT_TIME_SHORT)
+    Q_abs_short = ShortIC * numpy.exp((DRIFT_TIME_SHORT + e) * ratio)
+    Q_abs_long  = LongIC  * numpy.exp((DRIFT_TIME_LONG  + e) * ratio)
+
+    return Q_abs_short, Q_abs_long
+
 def GetLifetime_SinglePrM(
     ICPeak,
     ICPeak_Asymptotic,
