@@ -7,7 +7,7 @@ DEFAULT_ANALYSIS_CONFIGURATION = {
     'OuterLongChannel'          : 1,
     'InnerShortChannel'         : 3,
     'OuterShortChannel'         : 2,  
-    'InnerLongCalibration'      : 1.,           # multiplicative calibration factors
+    'InnerLongCalibration'      : 1.,           # multiplicative calibration factors, if you feel confident enough
     'OuterLongCalibration'      : 1.,      
     'InnerShortCalibration'     : 1.,
     'OuterShortCalibration'     : 1.,
@@ -19,8 +19,9 @@ DEFAULT_ANALYSIS_CONFIGURATION = {
                                                 # default is `rising` (middle point between valley and Compton edge)
     'LongICPeakSearchLimits'    : (0.4, 1),     # peak height window to look for the IC peak for the short Pr.M.
     'ShortICPeakSearchLimits'   : (0.4, 1),     # peak height window to look for the IC peak for the long Pr.M.
-    'ShortAsymptoticICPeak'     : 0.6212959,    # asymptotic value for the peak of the short PrM
-    'LongAsymptoticICPeak'      : 0.6212427,    # asymptotic value for the peak of the long PrM
-    'LongDrift'                 : 405,          # [mm]
-    'ShortDrift'                : 45,           # [mm]
+    'ShortAsymptoticICPeak'     : 0.60833,      # asymptotic value for the peak of the short-PrM
+    'LongAsymptoticICPeak'      : 0.60795,      # asymptotic value for the peak of the long-PrM
+    'LongDrift'                 : 405,          # mm
+    'ShortDrift'                : 45,           # mm
+    'DriftVelocity'             : 1.568,        # from BNL LAr property tables for 476 V/cm and 87.6 K
 }

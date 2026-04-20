@@ -77,15 +77,20 @@ def ExtractICPeak(
 
     # normalize the outer spectrum on the inner spectrum, based on the chosen mode...
     MODE = ANALYSIS_CONFIGURATION[f'ComptonMode']
-    if MODE == 'rising':
-        yComptonEdge_Outer = numpy.mean(yOuter[(Data[CH_OUTER]['BinCenter'] > MiddleComptonEdge - 0.025) & (Data[CH_OUTER]['BinCenter'] < MiddleComptonEdge + 0.025)])
-        yComptonEdge_Inner = numpy.mean(yInner[(Data[CH_INNER]['BinCenter'] > MiddleComptonEdge - 0.025) & (Data[CH_INNER]['BinCenter'] < MiddleComptonEdge + 0.025)])
-    elif MODE == 'min':
-        yComptonEdge_Outer = numpy.mean(yOuter[(Data[CH_OUTER]['BinCenter'] > MinimumComptonEdge - 0.025) & (Data[CH_OUTER]['BinCenter'] < MinimumComptonEdge + 0.025)])
-        yComptonEdge_Inner = numpy.mean(yInner[(Data[CH_INNER]['BinCenter'] > MinimumComptonEdge - 0.025) & (Data[CH_INNER]['BinCenter'] < MinimumComptonEdge + 0.025)])
-    elif MODE == 'max':
-        yComptonEdge_Outer = numpy.mean(yOuter[(Data[CH_OUTER]['BinCenter'] > ComptonEdge - 0.025) & (Data[CH_OUTER]['BinCenter'] < ComptonEdge + 0.025)])
-        yComptonEdge_Inner = numpy.mean(yInner[(Data[CH_INNER]['BinCenter'] > ComptonEdge - 0.025) & (Data[CH_INNER]['BinCenter'] < ComptonEdge + 0.025)])
+    match MODE:
+        case 'rising':
+            yComptonEdge_Outer = numpy.mean(yOuter[(Data[CH_OUTER]['BinCenter'] > MiddleComptonEdge - 0.025) & (Data[CH_OUTER]['BinCenter'] < MiddleComptonEdge + 0.025)])
+            yComptonEdge_Inner = numpy.mean(yInner[(Data[CH_INNER]['BinCenter'] > MiddleComptonEdge - 0.025) & (Data[CH_INNER]['BinCenter'] < MiddleComptonEdge + 0.025)])
+        case 'min':
+            yComptonEdge_Outer = numpy.mean(yOuter[(Data[CH_OUTER]['BinCenter'] > MinimumComptonEdge - 0.025) & (Data[CH_OUTER]['BinCenter'] < MinimumComptonEdge + 0.025)])
+            yComptonEdge_Inner = numpy.mean(yInner[(Data[CH_INNER]['BinCenter'] > MinimumComptonEdge - 0.025) & (Data[CH_INNER]['BinCenter'] < MinimumComptonEdge + 0.025)])
+        case 'max':
+            yComptonEdge_Outer = numpy.mean(yOuter[(Data[CH_OUTER]['BinCenter'] > ComptonEdge - 0.025) & (Data[CH_OUTER]['BinCenter'] < ComptonEdge + 0.025)])
+            yComptonEdge_Inner = numpy.mean(yInner[(Data[CH_INNER]['BinCenter'] > ComptonEdge - 0.025) & (Data[CH_INNER]['BinCenter'] < ComptonEdge + 0.025)])
+        case _:
+            print("Unavailable option, falling back to `rising`.")
+            yComptonEdge_Outer = numpy.mean(yOuter[(Data[CH_OUTER]['BinCenter'] > MiddleComptonEdge - 0.025) & (Data[CH_OUTER]['BinCenter'] < MiddleComptonEdge + 0.025)])
+            yComptonEdge_Inner = numpy.mean(yInner[(Data[CH_INNER]['BinCenter'] > MiddleComptonEdge - 0.025) & (Data[CH_INNER]['BinCenter'] < MiddleComptonEdge + 0.025)])
     ScalingFactor = yComptonEdge_Inner / yComptonEdge_Outer 
 
     # equalize x axis
@@ -172,10 +177,10 @@ def GetLifetime_DoublePrM(
 
     # error on the lifetime
     lifetime_err = abs(dt) \
-                 / (numpy.log(ICPeak_Long / ICPeak_Short)**2)  \
-                 * numpy.sqrt(
-                        pow(ICPeak_Long_err / ICPeak_Long, 2) +
-                        pow(ICPeak_Short_err / ICPeak_Short, 2)
-                 )
+        / (numpy.log(ICPeak_Long / ICPeak_Short)**2)  \
+        * numpy.sqrt(
+            pow(ICPeak_Long_err / ICPeak_Long, 2) +
+            pow(ICPeak_Short_err / ICPeak_Short, 2)
+        )
 
     return lifetime, lifetime_err
