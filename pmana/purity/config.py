@@ -14,7 +14,6 @@ DEFAULT_ANALYSIS_CONFIGURATION = {
     'InnerShortCalibration'     : 1.,
     'OuterShortCalibration'     : 1.,
     'ICFitter'                  : TripleGaus,   # simple Gaussain fit or triple-Gaussian fit currently supported
-    # 'GausFitMode'               : 'triple',     # `single` Gaus fit or `triple` Gaus fit currently supported
     'ShortGausFitLimits'        : (0.15, 0.15), # fitting limits around the peak for the short Pr.M.
     'LongGausFitLimits'         : (0.1, 0.15),  # fitting limits around the peak for the long Pr.M.
     'ComptonSearchLimits'       : (0.3, 0.7),   # peak height window to look for the Compton edge
