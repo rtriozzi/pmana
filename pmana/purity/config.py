@@ -23,5 +23,7 @@ DEFAULT_ANALYSIS_CONFIGURATION = {
     'LongAsymptoticICPeak'      : 0.60795,      # asymptotic value for the peak of the long-PrM
     'LongDrift'                 : 405,          # mm
     'ShortDrift'                : 45,           # mm
-    'DriftVelocity'             : 1.568,        # from BNL LAr property tables for 476 V/cm and 87.6 K
+    # 'DriftVelocity'             : 1.494,       # from Zambelli for 449 V/cm
+    'DriftVelocity'             : 1.538,        # from Zambelli, + 3% according for different electric fields
+    # 'DriftVelocity'             : 1.568,        # from BNL LAr property tables for 476 V/cm and 87.6 K
 }
