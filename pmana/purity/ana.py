@@ -3,13 +3,13 @@ import scipy
 
 from pmana.purity.config import DEFAULT_ANALYSIS_CONFIGURATION
 
-from pmana.utils.fitting import Gaus
+from pmana.utils.fitting import Gaus, TripleGaus
 from pmana.utils.io import ExtractSingleMeasurement
 
 def ExtractICPeak(
     MeasurementPath,
     PM_TAG = 'Long',
-    SAVE_SPECTRA = False,
+    DEBUG_MODE = False,
     ANALYSIS_CONFIGURATION = DEFAULT_ANALYSIS_CONFIGURATION
 ):
 
@@ -22,8 +22,9 @@ def ExtractICPeak(
         PM_TAG : str, `'Long'` or `'Short'`
                  What Pr.M. to process, with varying analysis configurations.
 
-        SAVE_SPECTRA : bool
-                       Whether to save also the IC spectra to dataframe.
+        DEBUG_MODE :   bool
+                       Whether to save also the IC spectra to dataframe, along
+                       with the full parameter list of the fitting function.
 
         CALIBRATION_FACTORS : dict
                               Mapping between channels and their calibration factors.
@@ -108,20 +109,27 @@ def ExtractICPeak(
     IC_Pos = xIC.iloc[IC_Pos_Idx] 
 
     # fit the IC peak around the identified max
+    ICFitFunction = ANALYSIS_CONFIGURATION[f'ICFitter']
     GAUS_FIT_LIMITS = ANALYSIS_CONFIGURATION[f'{PM_TAG}GausFitLimits']
-    pars, covs = scipy.optimize.curve_fit(
-        Gaus, 
-        xIC[(xIC > IC_Pos - GAUS_FIT_LIMITS[0]) & (xIC < IC_Pos + GAUS_FIT_LIMITS[1])], 
-        IC[(xIC > IC_Pos - GAUS_FIT_LIMITS[0]) & (xIC < IC_Pos + GAUS_FIT_LIMITS[1])], 
-        p0 = (IC[IC_Pos_Idx], xIC[IC_Pos_Idx], 0.1),
-        maxfev=1000
-    ) 
-    errs = numpy.sqrt(numpy.diag(covs))
 
-    if not SAVE_SPECTRA:
+    try:
+        pars, covs = scipy.optimize.curve_fit(
+            ICFitFunction, 
+            xIC[(xIC > IC_Pos - GAUS_FIT_LIMITS[0]) & (xIC < IC_Pos + GAUS_FIT_LIMITS[1])], 
+            IC[(xIC > IC_Pos - GAUS_FIT_LIMITS[0]) & (xIC < IC_Pos + GAUS_FIT_LIMITS[1])], 
+            p0 = (IC[IC_Pos_Idx], xIC[IC_Pos_Idx], 0.1),
+            maxfev = 2000
+        ) 
+        errs = numpy.sqrt(numpy.diag(covs))
+    except RuntimeError:
+        print(f"Catched a fit failure in {MeasurementPath}. Please look into it.")
+        pars = numpy.ones(3)
+        errs = numpy.ones(3)
+
+    if not DEBUG_MODE:
         return [pars[1], errs[1], ScalingFactor]
     else:
-        return [pars[1], errs[1], ScalingFactor, numpy.array(xIC).astype(float), numpy.array(IC).astype(float)]
+        return [pars, errs, ScalingFactor, numpy.array(xIC).astype(float), numpy.array(IC).astype(float)]
 
 def GetAsymptoticPrMVoltage(
     ShortIC,
