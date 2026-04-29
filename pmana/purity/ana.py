@@ -1,13 +1,14 @@
 import numpy
 import scipy
 
-from pmana.purity.config import DEFAULT_ANALYSIS_CONFIGURATION
+from pmana.purity.config import DEFAULT_ANALYSIS_CONFIGURATION, ResolveConfiguration
 
 from pmana.utils.fitting import Gaus, TripleGaus
 from pmana.utils.io import ExtractSingleMeasurement
 
 def ExtractICPeak(
     MeasurementPath,
+    Timestamp = None,
     PM_TAG = 'Long',
     DEBUG_MODE = False,
     ANALYSIS_CONFIGURATION = DEFAULT_ANALYSIS_CONFIGURATION
@@ -18,6 +19,11 @@ def ExtractICPeak(
         ---
         MeasurementPath : str
                           Path to data.
+        
+        Timestamp : datetime
+                    Date corresponding to the measurement.
+                    If `None`, it is ignored.
+                    In practice, it is needed to have a time-dependent calibration.
 
         PM_TAG : str, `'Long'` or `'Short'`
                  What Pr.M. to process, with varying analysis configurations.
@@ -25,10 +31,6 @@ def ExtractICPeak(
         DEBUG_MODE :   bool
                        Whether to save also the IC spectra to dataframe, along
                        with the full parameter list of the fitting function.
-
-        CALIBRATION_FACTORS : dict
-                              Mapping between channels and their calibration factors.
-                              Look in `pmana.purity.config` for defaults.
 
         ANALYSIS_CONFIGURATION : dict
                                  Some configuration parameters for analysis.
@@ -39,9 +41,12 @@ def ExtractICPeak(
         Optionally provides the IC spectra.
     """
 
+    if Timestamp is not None:
+        ANALYSIS_CONFIGURATION = ResolveConfiguration(ANALYSIS_CONFIGURATION, Timestamp)
+
     # verify Pr.M. tag
     assert PM_TAG == 'Long' or PM_TAG == 'Short', \
-           "The PM_TAG you used is not supported. Use 'Long' or 'Short'."
+           "The `PM_TAG` you used is not supported. Use `'Long'` or `'Short'`."
 
     # get data
     Data = ExtractSingleMeasurement(

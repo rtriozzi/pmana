@@ -65,7 +65,7 @@ def IterateCERN_CSV(
             continue
 
         # analyze the measurement
-        CHOutput = Analyze(FilePath)
+        CHOutput = Analyze(FilePath, Timestamp = t)
 
         # add date
         CHOutput.extend([t])
