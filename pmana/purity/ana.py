@@ -55,57 +55,72 @@ def ExtractICPeak(
         COL_NAMES = ['binCenter', 'F1', 'F2', 'F3', 'F4'],
         DELIMITER = ','
     )
-    print(f'Analyzing {MeasurementPath}...')
+    print(f'[{PM_TAG}] Analyzing {MeasurementPath}...')
 
     # get inner anode
     CH_INNER = ANALYSIS_CONFIGURATION[f'Inner{PM_TAG}Channel']
-    Interp = scipy.interpolate.interp1d(Data[CH_INNER]['BinCenter'], Data[CH_INNER]['Population'], kind='linear', bounds_error=False, fill_value=0)
-    yInner = Interp(Data[CH_INNER]['BinCenter'] / ANALYSIS_CONFIGURATION[f'Inner{PM_TAG}Calibration'])   
+    xInner = Data[CH_INNER]['BinCenter'] / ANALYSIS_CONFIGURATION[f'Inner{PM_TAG}Calibration']
+    yInner = Data[CH_INNER]['Population']
 
     # get outer anode
     CH_OUTER = ANALYSIS_CONFIGURATION[f'Outer{PM_TAG}Channel']
-    Interp = scipy.interpolate.interp1d(Data[CH_OUTER]['BinCenter'], Data[CH_OUTER]['Population'], kind='linear', bounds_error=False, fill_value=0)
-    yOuter = Interp(Data[CH_OUTER]['BinCenter'] / ANALYSIS_CONFIGURATION[f'Outer{PM_TAG}Calibration'])     
+    xOuter = Data[CH_OUTER]['BinCenter'] / ANALYSIS_CONFIGURATION[f'Outer{PM_TAG}Calibration']
+    yOuter = Data[CH_OUTER]['Population']
 
     # identify the Compton edge on the outer channel
-    COMPTON_SEARCH_LIMITS = ANALYSIS_CONFIGURATION[f'ComptonSearchLimits']
-    ComptonEdgeIdx = numpy.argmax(yOuter[(Data[CH_OUTER]['BinCenter'] > COMPTON_SEARCH_LIMITS[0]) & (Data[CH_OUTER]['BinCenter'] < COMPTON_SEARCH_LIMITS[1])]) + numpy.where(Data[CH_OUTER]['BinCenter'] > COMPTON_SEARCH_LIMITS[0])[0][0]
-    ComptonEdge = Data[CH_OUTER]['BinCenter'].iloc[ComptonEdgeIdx]
+    COMPTON_SEARCH_LIMITS = ANALYSIS_CONFIGURATION[f'{PM_TAG}ComptonSearchLimits']
+    mask = (xOuter > COMPTON_SEARCH_LIMITS[0]) & (xOuter < COMPTON_SEARCH_LIMITS[1])
+    indices = numpy.where(mask)[0]
+    ComptonEdgeIdx = indices[numpy.argmax(yOuter[mask])]
+    ComptonEdge = xOuter.iloc[ComptonEdgeIdx]
 
     # identify the valley before the Compton edge
-    MIN_COMPTON_SEARCH_LOW_LIM = ANALYSIS_CONFIGURATION[f'MinComptonSearchLowLimit']
-    MinimumComptonIdx = numpy.argmin(yOuter[(Data[CH_OUTER]['BinCenter'] > MIN_COMPTON_SEARCH_LOW_LIM) & (Data[CH_OUTER]['BinCenter'] < ComptonEdge)]) + numpy.where(Data[CH_OUTER]['BinCenter'] > MIN_COMPTON_SEARCH_LOW_LIM)[0][0]
-    MinimumComptonEdge = Data[CH_OUTER]['BinCenter'][MinimumComptonIdx]
+    MIN_COMPTON_SEARCH_LOW_LIM = ANALYSIS_CONFIGURATION[f'{PM_TAG}MinComptonSearchLowLimit']
+    mask = (xOuter > MIN_COMPTON_SEARCH_LOW_LIM) & (xOuter < ComptonEdge)
+    indices = numpy.where(mask)[0]
+    MinimumComptonIdx = indices[numpy.argmin(yOuter[mask])]
+    MinimumComptonEdge = xOuter[MinimumComptonIdx]
 
     # identify the rising edge of the Compton edge
     MiddleComptonEdgeIdx = int((MinimumComptonIdx + ComptonEdgeIdx) / 2)
-    MiddleComptonEdge = Data[CH_OUTER]['BinCenter'][MiddleComptonEdgeIdx]
+    MiddleComptonEdge = xOuter[MiddleComptonEdgeIdx]
 
     # normalize the outer spectrum on the inner spectrum, based on the chosen mode...
     MODE = ANALYSIS_CONFIGURATION[f'ComptonMode']
     match MODE:
         case 'rising':
-            yComptonEdge_Outer = numpy.mean(yOuter[(Data[CH_OUTER]['BinCenter'] > MiddleComptonEdge - 0.025) & (Data[CH_OUTER]['BinCenter'] < MiddleComptonEdge + 0.025)])
-            yComptonEdge_Inner = numpy.mean(yInner[(Data[CH_INNER]['BinCenter'] > MiddleComptonEdge - 0.025) & (Data[CH_INNER]['BinCenter'] < MiddleComptonEdge + 0.025)])
+            yComptonEdge_Outer = numpy.mean(yOuter[(xOuter > MiddleComptonEdge - 0.025) & (xOuter < MiddleComptonEdge + 0.025)])
+            yComptonEdge_Inner = numpy.mean(yInner[(xInner > MiddleComptonEdge - 0.025) & (xInner < MiddleComptonEdge + 0.025)])
+            CE = MiddleComptonEdge
         case 'min':
-            yComptonEdge_Outer = numpy.mean(yOuter[(Data[CH_OUTER]['BinCenter'] > MinimumComptonEdge - 0.025) & (Data[CH_OUTER]['BinCenter'] < MinimumComptonEdge + 0.025)])
-            yComptonEdge_Inner = numpy.mean(yInner[(Data[CH_INNER]['BinCenter'] > MinimumComptonEdge - 0.025) & (Data[CH_INNER]['BinCenter'] < MinimumComptonEdge + 0.025)])
+            yComptonEdge_Outer = numpy.mean(yOuter[(xOuter > MinimumComptonEdge - 0.025) & (xOuter < MinimumComptonEdge + 0.025)])
+            yComptonEdge_Inner = numpy.mean(yInner[(xInner > MinimumComptonEdge - 0.025) & (xInner < MinimumComptonEdge + 0.025)])
+            CE = MinimumComptonEdge
         case 'max':
-            yComptonEdge_Outer = numpy.mean(yOuter[(Data[CH_OUTER]['BinCenter'] > ComptonEdge - 0.025) & (Data[CH_OUTER]['BinCenter'] < ComptonEdge + 0.025)])
-            yComptonEdge_Inner = numpy.mean(yInner[(Data[CH_INNER]['BinCenter'] > ComptonEdge - 0.025) & (Data[CH_INNER]['BinCenter'] < ComptonEdge + 0.025)])
+            yComptonEdge_Outer = numpy.mean(yOuter[(xOuter > ComptonEdge - 0.025) & (xOuter < ComptonEdge + 0.025)])
+            yComptonEdge_Inner = numpy.mean(yInner[(xInner > ComptonEdge - 0.025) & (xInner < ComptonEdge + 0.025)])
+            CE = ComptonEdge
         case _:
             print("Unavailable option, falling back to `rising`.")
-            yComptonEdge_Outer = numpy.mean(yOuter[(Data[CH_OUTER]['BinCenter'] > MiddleComptonEdge - 0.025) & (Data[CH_OUTER]['BinCenter'] < MiddleComptonEdge + 0.025)])
-            yComptonEdge_Inner = numpy.mean(yInner[(Data[CH_INNER]['BinCenter'] > MiddleComptonEdge - 0.025) & (Data[CH_INNER]['BinCenter'] < MiddleComptonEdge + 0.025)])
+            yComptonEdge_Outer = numpy.mean(yOuter[(xOuter > MiddleComptonEdge - 0.025) & (xOuter < MiddleComptonEdge + 0.025)])
+            yComptonEdge_Inner = numpy.mean(yInner[(xInner > MiddleComptonEdge - 0.025) & (xInner < MiddleComptonEdge + 0.025)])
+            CE = MiddleComptonEdge
     ScalingFactor = yComptonEdge_Inner / yComptonEdge_Outer 
 
+    # if there's an external scale factor, use that instead...
+    if ANALYSIS_CONFIGURATION[f'ExternalScaleFactor{PM_TAG}Mode']:
+        ScalingFactor = ANALYSIS_CONFIGURATION[f'ExternalScaleFactor{PM_TAG}']
+
     # equalize x axis
-    xLow = numpy.max([numpy.min(Data[CH_INNER]['BinCenter']), numpy.min(Data[CH_OUTER]['BinCenter'])])
-    xHigh = numpy.min([numpy.max(Data[CH_INNER]['BinCenter']), numpy.max(Data[CH_OUTER]['BinCenter'])])
+    xLow = numpy.max([numpy.min(xInner), numpy.min(xOuter)])
+    xHigh = numpy.min([numpy.max(xInner), numpy.max(xOuter)])
 
     # get difference between inner spectrum and normalized outer spectrum
-    xIC = Data[CH_INNER]['BinCenter'][(Data[CH_INNER]['BinCenter'] > xLow) & (Data[CH_INNER]['BinCenter'] < xHigh)]
-    IC = yInner[(Data[CH_INNER]['BinCenter'] > xLow) & (Data[CH_INNER]['BinCenter'] < xHigh)] - yOuter[(Data[CH_OUTER]['BinCenter'] > xLow) & (Data[CH_OUTER]['BinCenter'] < xHigh)] * ScalingFactor
+    InterpOuter = scipy.interpolate.interp1d(xOuter, yOuter, bounds_error=False, fill_value=0)
+    yOuter_interp = InterpOuter(xInner)
+    mask = (xInner > xLow) & (xInner < xHigh)
+    xIC = xInner[mask]
+    IC = yInner[mask] - yOuter_interp[mask] * ScalingFactor
     IC[IC < 0] = 0.
 
     # extract IC peak
@@ -134,7 +149,7 @@ def ExtractICPeak(
     if not DEBUG_MODE:
         return [pars[1], errs[1], ScalingFactor]
     else:
-        return [pars, errs, ScalingFactor, numpy.array(xIC).astype(float), numpy.array(IC).astype(float)]
+        return [pars, errs, ScalingFactor, CE, numpy.array(xIC).astype(float), numpy.array(IC).astype(float)]
 
 def GetAsymptoticPrMVoltage(
     ShortIC,
