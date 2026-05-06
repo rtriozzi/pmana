@@ -56,6 +56,7 @@ def ExtractICPeak(
         DELIMITER = ','
     )
     print(f'[{PM_TAG}] Analyzing {MeasurementPath}...')
+    print(f'[{PM_TAG}] Calibration is {ANALYSIS_CONFIGURATION[f'Inner{PM_TAG}Calibration']} on inner and {ANALYSIS_CONFIGURATION[f'Outer{PM_TAG}Calibration']} on outer.')
 
     # get inner anode
     CH_INNER = ANALYSIS_CONFIGURATION[f'Inner{PM_TAG}Channel']
@@ -110,6 +111,9 @@ def ExtractICPeak(
     # if there's an external scale factor, use that instead...
     if ANALYSIS_CONFIGURATION[f'ExternalScaleFactor{PM_TAG}Mode']:
         ScalingFactor = ANALYSIS_CONFIGURATION[f'ExternalScaleFactor{PM_TAG}']
+
+    # logging...
+    print(f"[{PM_TAG}] Inner/outer scale factor is {ScalingFactor}." )
 
     # equalize x axis
     xLow = numpy.max([numpy.min(xInner), numpy.min(xOuter)])
