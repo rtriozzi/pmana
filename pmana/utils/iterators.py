@@ -1,6 +1,6 @@
 import pathlib
-import os
 import datetime
+import inspect
 
 def IterateCERN_CSV(
     CampaignPath,
@@ -65,7 +65,10 @@ def IterateCERN_CSV(
             continue
 
         # analyze the measurement
-        CHOutput = Analyze(FilePath, Timestamp = t)
+        if "Timestamp" in inspect.signature(Analyze).parameters:
+            CHOutput = Analyze(FilePath, Timestamp=t)
+        else:
+            CHOutput = Analyze(FilePath)
 
         # add date
         CHOutput.extend([t])

@@ -173,8 +173,7 @@ def GaussianFitToChannel(
         Data = ExtractSingleMeasurement(MeasurementPath,
             DELIMITER = DELIMITER)
 
-    if debug:
-        print(f"[Analyze] Extracted {len(Data)} channels")
+    print(f"[GaussianFitToChannel] Extracted {len(Data)} channels from {MeasurementPath}.")
 
     for i, CHData in enumerate(Data):
 

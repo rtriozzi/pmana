@@ -44,7 +44,7 @@ DEFAULT_ANALYSIS_CONFIGURATION = {
                                                     # default is `rising` (middle point between valley and Compton edge)
     'ExternalScaleFactorLongMode'   : False,        # whether the scale factor is provided from external considerations, skipping the CE calculations
     'ExternalScaleFactorLong'       : 1.2,          # the external scale factor
-    'ExternalScaleFactorShortMode'   : False,        
+    'ExternalScaleFactorShortMode'  : False,        
     'ExternalScaleFactorShort'      : 1.,          
     'LongICPeakSearchLimits'        : (0.15, 0.5),  # peak height window to look for the IC peak for the short Pr.M.
     'ShortICPeakSearchLimits'       : (0.4, 0.7),   # peak height window to look for the IC peak for the long Pr.M.

@@ -55,6 +55,8 @@ def ExtractICPeak(
         COL_NAMES = ['binCenter', 'F1', 'F2', 'F3', 'F4'],
         DELIMITER = ','
     )
+
+    # debug
     print(f'[{PM_TAG}] Analyzing {MeasurementPath}...')
     print(f'[{PM_TAG}] Calibration is {ANALYSIS_CONFIGURATION[f'Inner{PM_TAG}Calibration']} on inner and {ANALYSIS_CONFIGURATION[f'Outer{PM_TAG}Calibration']} on outer.')
 

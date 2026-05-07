@@ -8,8 +8,8 @@ def PlotTimeSeriesWithErrors(
     Date,
     Peak,
     PeakError,
-    LABEL = '',
-    XLABELS = True
+    XLABELS = True,
+    **kwargs,
 ):
 
     """
@@ -42,7 +42,8 @@ def PlotTimeSeriesWithErrors(
     )
     ax.fill_between(
         Date, Peak-PeakError, Peak+PeakError, 
-        alpha=0.3, label=LABEL
+        alpha=0.3, 
+        **kwargs
     )
     if not XLABELS:
         ax.set_xticklabels([])
