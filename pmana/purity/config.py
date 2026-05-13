@@ -9,7 +9,7 @@ from pmana.utils.fitting import Gaus, TripleGaus
 # usage: list of `Tuple(datetime, value)` for each single
 # calibration entry, the `value` is taken for measurements
 # taken after the specified `datetime`.
-CALIBRATION_CHANGES = {
+CALIBRATION_CHANGES_COLDBOX = {
     'OuterLongCalibration': [
         (datetime.datetime(2026, 3, 1, 0, 0), 1.0096),
         (datetime.datetime(2026, 3, 7, 15, 0), 1.),
@@ -60,7 +60,7 @@ DEFAULT_ANALYSIS_CONFIGURATION = {
 def ResolveConfiguration(
     Config, 
     Timestamp, 
-    CONFIG_CHANGES = CALIBRATION_CHANGES
+    CONFIG_CHANGES = CALIBRATION_CHANGES_COLDBOX
 ):
     # grab the configuration
     resolved = dict(Config)

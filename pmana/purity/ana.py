@@ -1,9 +1,8 @@
 import numpy
 import scipy
 
-from pmana.purity.config import DEFAULT_ANALYSIS_CONFIGURATION, ResolveConfiguration
+from pmana.purity.config import DEFAULT_ANALYSIS_CONFIGURATION, CALIBRATION_CHANGES_COLDBOX, ResolveConfiguration
 
-from pmana.utils.fitting import Gaus, TripleGaus
 from pmana.utils.io import ExtractSingleMeasurement
 
 def ExtractICPeak(
@@ -11,19 +10,20 @@ def ExtractICPeak(
     Timestamp = None,
     PM_TAG = 'Long',
     DEBUG_MODE = False,
-    ANALYSIS_CONFIGURATION = DEFAULT_ANALYSIS_CONFIGURATION
+    ANALYSIS_CONFIGURATION = DEFAULT_ANALYSIS_CONFIGURATION,
+    CONFIG_CHANGES = CALIBRATION_CHANGES_COLDBOX
 ):
 
     """
         Input
         ---
         MeasurementPath : str
-                          Path to data.
+                          Path to a measurement.
         
         Timestamp : datetime
                     Date corresponding to the measurement.
                     If `None`, it is ignored.
-                    In practice, it is needed to have a time-dependent calibration.
+                    If passed, it is used for a time-dependent calibration.
 
         PM_TAG : str, `'Long'` or `'Short'`
                  What Pr.M. to process, with varying analysis configurations.
@@ -33,16 +33,27 @@ def ExtractICPeak(
                        with the full parameter list of the fitting function.
 
         ANALYSIS_CONFIGURATION : dict
-                                 Some configuration parameters for analysis.
+                                 Configuration parameters for analysis.
                                  Look in `pmana.purity.config` for defaults.
+
+        CONFIG_CHANGES : dict
+                         Log of changes of configuration parameters, with dates.
+                         Look in `pmana.purity.config` for defaults.
         Output
         ---
         Provides the IC peak position, IC peak width, and inner-outer scaling factor.
         Optionally provides the IC spectra.
     """
 
+    # if a date is passed, it is used to check for configuration
+    # changes (e.g., involving calibration factors), and update the
+    # input configuration dictionary
     if Timestamp is not None:
-        ANALYSIS_CONFIGURATION = ResolveConfiguration(ANALYSIS_CONFIGURATION, Timestamp)
+        ANALYSIS_CONFIGURATION = ResolveConfiguration(
+            ANALYSIS_CONFIGURATION, 
+            Timestamp, 
+            CONFIG_CHANGES = CONFIG_CHANGES
+        )
 
     # verify Pr.M. tag
     assert PM_TAG == 'Long' or PM_TAG == 'Short', \
@@ -56,7 +67,7 @@ def ExtractICPeak(
         DELIMITER = ','
     )
 
-    # debug
+    # logging
     print(f'[{PM_TAG}] Analyzing {MeasurementPath}...')
     print(f'[{PM_TAG}] Calibration is {ANALYSIS_CONFIGURATION[f'Inner{PM_TAG}Calibration']} on inner and {ANALYSIS_CONFIGURATION[f'Outer{PM_TAG}Calibration']} on outer.')
 
@@ -88,7 +99,9 @@ def ExtractICPeak(
     MiddleComptonEdgeIdx = int((MinimumComptonIdx + ComptonEdgeIdx) / 2)
     MiddleComptonEdge = xOuter[MiddleComptonEdgeIdx]
 
-    # normalize the outer spectrum on the inner spectrum, based on the chosen mode...
+    # normalize the outer spectrum on the inner spectrum, based on the chosen mode
+    # note that this is currently not really the Compton edge of the outer spectrum, 
+    # but rather the spectrum itself - this is fine for analysis purposes, though
     MODE = ANALYSIS_CONFIGURATION[f'ComptonMode']
     match MODE:
         case 'rising':
