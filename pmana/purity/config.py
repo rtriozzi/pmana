@@ -57,6 +57,50 @@ DEFAULT_ANALYSIS_CONFIGURATION = {
     # 'DriftVelocity'               : 1.568,        # from BNL LAr property tables for 476 V/cm and 87.6 K
 }
 
+# configuration presets for the test-pulse-focused analysis
+# supported presets: `DT5781`, `CSV`, `default`
+DT5781_TESTPULSE_CONFIGURATION = {
+    'ExtractKwargs'     : dict(
+                            CHANNEL_KEY='CH*', 
+                            N_SKIP_LINES=3,
+                            COL_NAMES=['c0','c1','c2'], 
+                            DELIMITER=' '
+                        ),
+    'BinName'           : 'BinCenter',
+    'CountName'         : 'Population',
+    'SkipNRows'         : 0,
+    'MaskTestPulse'     : False,
+    'TestPulseLowLim'   : 0.6,
+    'Rebin'             : False,
+    'TPFitter'          : Gaus,
+}
+
+CSV_TESTPULSE_CONFIGURATION = {
+    'ExtractKwargs'     : dict(
+                            IS_CSV=True,
+                            COL_NAMES=['binCenter','F1','F2','F3','F4'],
+                            DELIMITER=','
+                        ),
+    'BinName'           : 'BinCenter',
+    'CountName'         : 'Population',
+    'SkipNRows'         : 0,
+    'MaskTestPulse'     : True,
+    'TestPulseLowLim'   : 0.7,
+    'Rebin'             : False,
+    'TPFitter'          : Gaus,
+}
+
+DEFAULT_TESTPULSE_CONFIGURATION = {
+    'ExtractKwargs'     : dict(DELIMITER=';'),
+    'BinName'           : 'BinCenter',
+    'CountName'         : 'Population',
+    'SkipNRows'         : 0,
+    'MaskTestPulse'     : True,
+    'TestPulseLowLim'   : 0.7,
+    'Rebin'             : False,
+    'TPFitter'          : Gaus,
+}
+
 def ResolveConfiguration(
     Config, 
     Timestamp, 
