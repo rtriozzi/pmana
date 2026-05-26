@@ -135,6 +135,7 @@ def PlotSingleChannel(
     debug = False,
     DISPLAY_FIT = True,
     SKIP_NROWS = 0,
+    MIN_ROWS = 5,
     BINNAME = 'BinCenter',
     COUNTNAME = 'Population'
 ):
@@ -164,8 +165,12 @@ def PlotSingleChannel(
     """
 
     if SKIP_NROWS > 0:
-        print(f"Skipping the first {SKIP_NROWS} rows.")
+        print(f"[PlotSingleChannel] Skipping the first {SKIP_NROWS} rows.")
         CHData = CHData.iloc[SKIP_NROWS:].reset_index(drop=True)
+
+    if len(CHData) < MIN_ROWS:
+        print(f"[PlotSingleChannel] CH{channel}: only {len(CHData)} valid row(s) found, skipping.")
+        return None
 
     # adaptively extract bin edges
     Diffs = numpy.diff(sorted(CHData[BINNAME]))
@@ -205,16 +210,16 @@ def PlotSingleChannel(
             )
             errs = numpy.sqrt(numpy.diag(covs))
         except RuntimeError:
-            print(f"Could not perform fit for channel {channel}.")
-            print(f"Initial guesses: {idxMax}, {std}")
+            print(f"[PlotSingleChannel] Could not perform fit for channel {channel}.")
+            print(f"[PlotSingleChannel] Initial guesses: {idxMax}, {std}")
             pars = numpy.ones(3)
             errs = numpy.ones(3)
         
         if debug:
-            print(f"Peak position: {posMax}")
-            print(f"Candidate std. deviation: {std}")
-            print(f"Fit parameters: {pars}")
-            print(f"Fit parameter errors: {errs}")
+            print(f"[PlotSingleChannel] Peak position: {posMax}")
+            print(f"[PlotSingleChannel] Candidate std. deviation: {std}")
+            print(f"[PlotSingleChannel] Fit parameters: {pars}")
+            print(f"[PlotSingleChannel] Fit parameter errors: {errs}")
 
         # plot fit
         ax.plot(
