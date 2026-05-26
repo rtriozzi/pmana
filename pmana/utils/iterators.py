@@ -70,10 +70,13 @@ def IterateCERN_CSV(
         else:
             CHOutput = Analyze(FilePath)
 
-        # add date
-        CHOutput.extend([t])
-
-        Output.append(CHOutput)
+        # add date and append
+        if isinstance(CHOutput, dict):
+            CHOutput['Date'] = t
+            Output.append(CHOutput)
+        else:
+            CHOutput.extend([t])
+            Output.append(CHOutput)
       
     return Output
 

@@ -43,18 +43,47 @@ def ExtractTestPulse(
     Data = ExtractSingleMeasurement(MeasurementPath, **TESTPULSE_CONFIGURATION['ExtractKwargs'])
     print(f"[ExtractTestPulse] Extracted {len(Data)} channels from {MeasurementPath}.")
 
+    # pre-fill output dict
+    Output = {
+        key: numpy.nan
+        for i in range(len(Data))
+        for key in [f"Peak_CH{i+1}", f"Err_Peak_CH{i+1}", f"Width_CH{i+1}", f"Err_Width_CH{i+1}"]
+    }
+
     parss, errss = [], []
     for i, CHData in enumerate(Data):
+
+        # setup fitting function
+        TPFitFunction = TESTPULSE_CONFIGURATION['TPFitter']
+        NPars = len(inspect.signature(TPFitFunction).parameters) - 1
+
+        if len(CHData) < TESTPULSE_CONFIGURATION['MinNOfMeas']:
+            print(f"[ExtractTestPulse] Channel {i}: only {len(CHData)} valid row(s), skipping.")
+            continue
 
         if TESTPULSE_CONFIGURATION['SkipNRows'] > 0:
             CHData = CHData.iloc[TESTPULSE_CONFIGURATION['SkipNRows']:].reset_index(drop=True)
 
+        # mask the test-pulse window
         if TESTPULSE_CONFIGURATION['MaskTestPulse']:
-            CHData = CHData[CHData[TESTPULSE_CONFIGURATION['BinName']] > TESTPULSE_CONFIGURATION['TestPulseLowLim']].reset_index(drop=True)
+            ShortCHs = [TESTPULSE_CONFIGURATION['InnerShortChannel'], TESTPULSE_CONFIGURATION['OuterShortChannel']]
+            LongCHs  = [TESTPULSE_CONFIGURATION['InnerLongChannel'],  TESTPULSE_CONFIGURATION['OuterLongChannel']]
+            if i in ShortCHs:
+                LowLim, HighLim = TESTPULSE_CONFIGURATION['ShortTestPulseLowLim'], TESTPULSE_CONFIGURATION['ShortTestPulseHighLim']
+            elif i in LongCHs:
+                LowLim, HighLim = TESTPULSE_CONFIGURATION['LongTestPulseLowLim'],  TESTPULSE_CONFIGURATION['LongTestPulseHighLim']
+            else:
+                print(f"[ExtractTestPulse] Channel {i}: not mapped to any PrM type, skipping mask.")
+                LowLim, HighLim = -numpy.inf, numpy.inf
+            CHData = CHData[
+                (CHData[TESTPULSE_CONFIGURATION['BinName']] > LowLim) &
+                (CHData[TESTPULSE_CONFIGURATION['BinName']] < HighLim)
+            ].reset_index(drop=True)
 
         # not worth to look at this measurement
         # something must have gone really wrong
         if len(CHData) < 10:
+            print(f"[ExtractTestPulse] Channel {i+1}: too few rows after masking, skipping.")
             continue
 
         # adaptively extract bin edges and adjust if you want
@@ -70,18 +99,12 @@ def ExtractTestPulse(
         y = numpy.asarray(y, dtype=float)
         x = numpy.asarray((bins[:-1] + bins[1:]) / 2)
 
-        # setup fitting function
-        TPFitFunction = TESTPULSE_CONFIGURATION['TPFitter']
-        NPars = len(inspect.signature(TPFitFunction).parameters) - 1
-
         # roughly extract channel features
         idxMax = numpy.argmax(y)
         posMax = x[idxMax]
         indices = numpy.where(y > 0.1 * max(y))[0]
         if len(indices) < 2:
-            if DEBUG_MODE:
-                print(f"[ExtractTestPulse] Channel {i}: insufficient bins above threshold, skipping")
-            Output.extend([numpy.nan] * (NPars - 1) * 2)
+            print(f"[ExtractTestPulse] Channel {i}: insufficient bins above threshold, skipping")
             continue
         std = (x[indices[-1]] - x[indices[0]]) / 2.355
 
@@ -130,7 +153,7 @@ def ExtractTestPulse(
             pars = errs = [numpy.nan] * NPars
 
         # cap non realistic values...
-        if numpy.any(numpy.abs(pars) > 1.e6):
+        if numpy.any(numpy.abs(pars) > 1.e5) or numpy.any(numpy.abs(errs) > 1.e3):
             print(f"[ExtractTestPulse] Fit values not good here: {MeasurementPath}, {i}. Capping.")
             pars = errs = [numpy.nan] * NPars
 
@@ -143,10 +166,10 @@ def ExtractTestPulse(
             print(f"[ExtractTestPulse] Candidate std. dev.: {std}")
             print(f"[ExtractTestPulse] Fit parameters: {pars}")
 
-        Output.append(pars[1])   # peak mean
-        Output.append(errs[1])   # peak mean error
-        Output.append(pars[2])   # peak sigma
-        Output.append(errs[2])   # peak sigma error
+        Output[f"Peak_CH{i+1}"]      = pars[1] # peak mean
+        Output[f"Err_Peak_CH{i+1}"]  = errs[1] # peak mean error
+        Output[f"Width_CH{i+1}"]     = pars[2] # peak sigma
+        Output[f"Err_Width_CH{i+1}"] = errs[2] # peak sigma error
 
     if not DEBUG_MODE:
         return Output
