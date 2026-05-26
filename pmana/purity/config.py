@@ -1,6 +1,6 @@
 import datetime
 
-from pmana.utils.fitting import Gaus, TripleGaus
+from pmana.utils.fitting import Gaus, GausPlusLine, TripleGaus
 
 # logger for configuration changes in time:
 # this adds support, e.g., for a time-dependent gain calibration,
@@ -8,7 +8,7 @@ from pmana.utils.fitting import Gaus, TripleGaus
 # in the PrMs within a data taking run
 # usage: list of `Tuple(datetime, value)` for each single
 # calibration entry, the `value` is taken for measurements
-# taken after the specified `datetime`.
+# taken after the specified `datetime`
 CALIBRATION_CHANGES_COLDBOX = {
     'OuterLongCalibration': [
         (datetime.datetime(2026, 3, 1, 0, 0), 1.0096),
@@ -52,54 +52,56 @@ DEFAULT_ANALYSIS_CONFIGURATION = {
     'LongAsymptoticICPeak'          : 0.60795,      # asymptotic value for the peak of the long-PrM
     'LongDrift'                     : 405,          # mm
     'ShortDrift'                    : 45,           # mm
-    # 'DriftVelocity'               : 1.494,       # from Zambelli for 449 V/cm
+    # 'DriftVelocity'               : 1.494,         # from Zambelli for 449 V/cm
     'DriftVelocity'                 : 1.538,        # from Zambelli, + 3% according for different electric fields
-    # 'DriftVelocity'               : 1.568,        # from BNL LAr property tables for 476 V/cm and 87.6 K
+    # 'DriftVelocity'               : 1.568,         # from BNL LAr property tables for 476 V/cm and 87.6 K
 }
 
 # configuration presets for the test-pulse-focused analysis
-# supported presets: `DT5781`, `CSV`, `default`
-DT5781_TESTPULSE_CONFIGURATION = {
-    'ExtractKwargs'     : dict(
-                            CHANNEL_KEY='CH*', 
-                            N_SKIP_LINES=3,
-                            COL_NAMES=['c0','c1','c2'], 
-                            DELIMITER=' '
-                        ),
-    'BinName'           : 'BinCenter',
-    'CountName'         : 'Population',
-    'SkipNRows'         : 0,
-    'MaskTestPulse'     : False,
-    'TestPulseLowLim'   : 0.6,
-    'Rebin'             : False,
-    'TPFitter'          : Gaus,
-}
+# supported presets: `default`, `DT5781`, `CSV`
 
-CSV_TESTPULSE_CONFIGURATION = {
-    'ExtractKwargs'     : dict(
-                            IS_CSV=True,
-                            COL_NAMES=['binCenter','F1','F2','F3','F4'],
-                            DELIMITER=','
-                        ),
-    'BinName'           : 'BinCenter',
-    'CountName'         : 'Population',
-    'SkipNRows'         : 0,
-    'MaskTestPulse'     : True,
-    'TestPulseLowLim'   : 0.7,
-    'Rebin'             : False,
-    'TPFitter'          : Gaus,
-}
-
+# `default`, generic, test pulse configuration
 DEFAULT_TESTPULSE_CONFIGURATION = {
-    'ExtractKwargs'     : dict(DELIMITER=';'),
-    'BinName'           : 'BinCenter',
-    'CountName'         : 'Population',
-    'SkipNRows'         : 0,
-    'MaskTestPulse'     : True,
-    'TestPulseLowLim'   : 0.7,
-    'Rebin'             : False,
-    'TPFitter'          : Gaus,
+    'ExtractKwargs'     : dict(DELIMITER=';'),  # parameters for the I/O
+    'InnerLongChannel'  : 2,                    # mapping between readout channel and physical meaning
+    'OuterLongChannel'  : 3,
+    'InnerShortChannel' : 0,
+    'OuterShortChannel' : 1,  
+    'BinName'           : 'BinCenter',          # name for binned column
+    'CountName'         : 'Population',         # name for counts column
+    'MinNOfMeas'        : 5,                    # skip files with less than `MinNOfMeas` lines
+    'SkipNRows'         : 0,                    # skip the first `SkipNRows` lines
+    'MaskTestPulse'     : True,                 # whether to mask the spectra to isolate the test pulses
+    'ShortTestPulseLowLim'   : 0.7,             # low- and high-limits for the test-pulse masks, by PrM
+    'ShortTestPulseHighLim'  : 1,
+    'LongTestPulseLowLim'    : 0.7,
+    'LongTestPulseHighLim'   : 1,
+    'Rebin'             : False,                # optionally halve the binning for stability
+    'TPFitter'          : GausPlusLine,         # fitter for the test pulse; `GausPlusLine` adds simple background modeling
 }
+
+# `DT5781` test pulse configuration
+# this was needed for the Padova test-stand
+# where there was no physical spectrum other
+# than a simple, Gaussian test pulse
+DT5781_TESTPULSE_CONFIGURATION = DEFAULT_TESTPULSE_CONFIGURATION.copy()
+DT5781_TESTPULSE_CONFIGURATION['ExtractKwargs'] = dict(
+    CHANNEL_KEY='CH*', 
+    N_SKIP_LINES=3,
+    COL_NAMES=['c0','c1','c2'], 
+    DELIMITER=' '
+)
+DT5781_TESTPULSE_CONFIGURATION['MaskTestPulse'] = False
+
+# `csv` test pulse configuration
+# supporting the new file format from the 
+# oscilloscope-based data acquisition
+CSV_TESTPULSE_CONFIGURATION = DEFAULT_TESTPULSE_CONFIGURATION.copy()
+CSV_TESTPULSE_CONFIGURATION['ExtractKwargs'] = dict(
+    IS_CSV=True,
+    COL_NAMES=['binCenter','F1','F2','F3','F4'],
+    DELIMITER=','
+)
 
 def ResolveConfiguration(
     Config, 
