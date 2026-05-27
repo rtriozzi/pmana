@@ -60,6 +60,9 @@ DEFAULT_ANALYSIS_CONFIGURATION = {
     'LongMinComptonSearchLowLimit'  : 0.15,         # low limit when going backwards from the Compton edge to look for the valley
     'ComptonMode'                   : 'rising',     # how we extract the normalization between short and long
                                                     # default is `rising` (middle point between valley and Compton edge)
+    'ComptonEdgeFitter'             : Gaus,
+    'ComptonEdgeFitRightThreshold'  : 0.05,
+    'ComptonEdgeFitLeftLimit'       : 0.05,
     'ExternalScaleFactorLongMode'   : False,        # whether the scale factor is provided from external considerations, skipping the CE calculations
     'ExternalScaleFactorLong'       : 1.2,          # the external scale factor
     'ExternalScaleFactorShortMode'  : False,        

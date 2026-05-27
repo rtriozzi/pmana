@@ -5,6 +5,8 @@ from pmana.purity.config import DEFAULT_ANALYSIS_CONFIGURATION, CALIBRATION_CHAN
 
 from pmana.utils.io import ExtractSingleMeasurement
 
+from pmana.utils.fitting import Gaus
+
 def ExtractICPeak(
     MeasurementPath,
     Timestamp = None,
@@ -103,6 +105,7 @@ def ExtractICPeak(
     # note that this is currently not really the Compton edge of the outer spectrum, 
     # but rather the spectrum itself - this is fine for analysis purposes, though
     MODE = ANALYSIS_CONFIGURATION[f'ComptonMode']
+    pars_compton = None
     match MODE:
         case 'rising':
             yComptonEdge_Outer = numpy.mean(yOuter[(xOuter > MiddleComptonEdge - 0.025) & (xOuter < MiddleComptonEdge + 0.025)])
@@ -116,8 +119,39 @@ def ExtractICPeak(
             yComptonEdge_Outer = numpy.mean(yOuter[(xOuter > ComptonEdge - 0.025) & (xOuter < ComptonEdge + 0.025)])
             yComptonEdge_Inner = numpy.mean(yInner[(xInner > ComptonEdge - 0.025) & (xInner < ComptonEdge + 0.025)])
             CE = ComptonEdge
+        case 'fit':
+            # find sensible fitting range for the Compton Edge
+            # extending 0.025 before the rough ComptonEdge
+            # and up to where the spectrum falls below 5% of the CE counts
+            ComptonEdgeCounts = yOuter.iloc[ComptonEdgeIdx]
+            BelowThresholdIdx = numpy.where(yOuter[xOuter > ComptonEdge].values < ANALYSIS_CONFIGURATION[f'ComptonEdgeFitRightThreshold'] * ComptonEdgeCounts)[0]
+
+            if len(BelowThresholdIdx) > 0:
+                CEFitRightLim = xOuter[xOuter > ComptonEdge].iloc[BelowThresholdIdx[0]]
+            else:
+                CEFitRightLim = xOuter.iloc[-1]
+
+            try:
+                pars_compton, _ = scipy.optimize.curve_fit(
+                    ANALYSIS_CONFIGURATION[f'ComptonEdgeFitter'],
+                    xOuter[(xOuter > ComptonEdge - ANALYSIS_CONFIGURATION[f'ComptonEdgeFitLeftLimit']) & (xOuter < CEFitRightLim)],
+                    yOuter[(xOuter > ComptonEdge - ANALYSIS_CONFIGURATION[f'ComptonEdgeFitLeftLimit']) & (xOuter < CEFitRightLim)],
+                    p0     = (ComptonEdgeCounts, float(ComptonEdge), 0.05),
+                    maxfev = 2000
+                )
+                CE = pars_compton[1]
+                yComptonEdge_Outer = pars_compton[0]
+                yComptonEdge_Inner = numpy.mean(yInner[(xInner > CE - 0.025) & (xInner < CE + 0.025)])
+            except RuntimeError:
+                print(f"[{PM_TAG}] Compton edge fit failed in {MeasurementPath}, falling back to 'rising' mode.")
+
+                # fall back to simple maximum, which is what we
+                # are trying to capture here
+                CE = ComptonEdge
+                yComptonEdge_Outer = numpy.mean(yOuter[(xOuter > CE - 0.025) & (xOuter < CE + 0.025)])
+                yComptonEdge_Inner = numpy.mean(yInner[(xInner > CE - 0.025) & (xInner < CE + 0.025)])
         case _:
-            print("Unavailable option, falling back to `rising`.")
+            print(f"[{PM_TAG}] Unavailable option, falling back to `rising`.")
             yComptonEdge_Outer = numpy.mean(yOuter[(xOuter > MiddleComptonEdge - 0.025) & (xOuter < MiddleComptonEdge + 0.025)])
             yComptonEdge_Inner = numpy.mean(yInner[(xInner > MiddleComptonEdge - 0.025) & (xInner < MiddleComptonEdge + 0.025)])
             CE = MiddleComptonEdge
@@ -161,14 +195,14 @@ def ExtractICPeak(
         ) 
         errs = numpy.sqrt(numpy.diag(covs))
     except RuntimeError:
-        print(f"Catched a fit failure in {MeasurementPath}. Please look into it.")
+        print(f"[{PM_TAG}] Catched a fit failure in {MeasurementPath}. Please look into it.")
         pars = numpy.ones(3)
         errs = numpy.ones(3)
 
     if not DEBUG_MODE:
         return [pars[1], errs[1], ScalingFactor]
     else:
-        return [pars, errs, ScalingFactor, CE, xIC.astype(float), IC.astype(float)]
+        return [pars, errs, ScalingFactor, CE, pars_compton, xIC.astype(float), IC.astype(float)]
 
 def GetAsymptoticPrMVoltage(
     ShortIC,
