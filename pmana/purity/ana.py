@@ -1,7 +1,7 @@
 import numpy
 import scipy
 
-from pmana.purity.config import DEFAULT_ANALYSIS_CONFIGURATION, CALIBRATION_CHANGES_COLDBOX, ResolveConfiguration
+from pmana.purity.config import DEFAULT_ANALYSIS_CONFIGURATION, CALIBRATION_CHANGES_DEFAULT, ResolveConfiguration
 
 from pmana.utils.io import ExtractSingleMeasurement
 
@@ -11,7 +11,7 @@ def ExtractICPeak(
     PM_TAG = 'Long',
     DEBUG_MODE = False,
     ANALYSIS_CONFIGURATION = DEFAULT_ANALYSIS_CONFIGURATION,
-    CONFIG_CHANGES = CALIBRATION_CHANGES_COLDBOX
+    CONFIG_CHANGES = CALIBRATION_CHANGES_DEFAULT
 ):
 
     """
@@ -73,12 +73,12 @@ def ExtractICPeak(
 
     # get inner anode
     CH_INNER = ANALYSIS_CONFIGURATION[f'Inner{PM_TAG}Channel']
-    xInner = Data[CH_INNER]['BinCenter'] / ANALYSIS_CONFIGURATION[f'Inner{PM_TAG}Calibration']
+    xInner = Data[CH_INNER]['BinCenter'] * ANALYSIS_CONFIGURATION[f'Inner{PM_TAG}Calibration']
     yInner = Data[CH_INNER]['Population']
 
     # get outer anode
     CH_OUTER = ANALYSIS_CONFIGURATION[f'Outer{PM_TAG}Channel']
-    xOuter = Data[CH_OUTER]['BinCenter'] / ANALYSIS_CONFIGURATION[f'Outer{PM_TAG}Calibration']
+    xOuter = Data[CH_OUTER]['BinCenter'] * ANALYSIS_CONFIGURATION[f'Outer{PM_TAG}Calibration']
     yOuter = Data[CH_OUTER]['Population']
 
     # identify the Compton edge on the outer channel
@@ -138,14 +138,14 @@ def ExtractICPeak(
     InterpOuter = scipy.interpolate.interp1d(xOuter, yOuter, bounds_error=False, fill_value=0)
     yOuter_interp = InterpOuter(xInner)
     mask = (xInner > xLow) & (xInner < xHigh)
-    xIC = xInner[mask]
-    IC = yInner[mask] - yOuter_interp[mask] * ScalingFactor
+    xIC = numpy.array(xInner[mask])
+    IC = numpy.array(yInner[mask] - (yOuter_interp[mask] * ScalingFactor))
     IC[IC < 0] = 0.
 
     # extract IC peak
     IC_PEAK_LIMITS = ANALYSIS_CONFIGURATION[f'{PM_TAG}ICPeakSearchLimits']
     IC_Pos_Idx = numpy.where((xIC >= IC_PEAK_LIMITS[0]) & (xIC <= IC_PEAK_LIMITS[1]))[0][numpy.argmax(IC[(xIC >= IC_PEAK_LIMITS[0]) & (xIC <= IC_PEAK_LIMITS[1])])]
-    IC_Pos = xIC.iloc[IC_Pos_Idx] 
+    IC_Pos = xIC[IC_Pos_Idx]
 
     # fit the IC peak around the identified max
     ICFitFunction = ANALYSIS_CONFIGURATION[f'ICFitter']
@@ -168,7 +168,7 @@ def ExtractICPeak(
     if not DEBUG_MODE:
         return [pars[1], errs[1], ScalingFactor]
     else:
-        return [pars, errs, ScalingFactor, CE, numpy.array(xIC).astype(float), numpy.array(IC).astype(float)]
+        return [pars, errs, ScalingFactor, CE, xIC.astype(float), IC.astype(float)]
 
 def GetAsymptoticPrMVoltage(
     ShortIC,

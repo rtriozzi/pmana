@@ -54,8 +54,8 @@ def PlotTimeSeries(
     ax,
     Date,
     Peak,
-    LABEL = '',
-    XLABELS = True
+    XLABELS = True,
+    **kwargs,
 ):
 
     """
@@ -81,7 +81,8 @@ def PlotTimeSeries(
 
     ax.plot(
         Date, Peak, 
-        lw=1, label=LABEL
+        lw=1, 
+        **kwargs
     )
     if not XLABELS:
         ax.set_xticklabels([])
@@ -131,9 +132,8 @@ def PlotSingleChannel(
     CHData,
     ax,
     channel = 0,
+    CALIBRATION_FACTOR = 1,
     rebin = False,
-    debug = False,
-    DISPLAY_FIT = True,
     SKIP_NROWS = 0,
     MIN_ROWS = 5,
     BINNAME = 'BinCenter',
@@ -181,7 +181,7 @@ def PlotSingleChannel(
     
     # plot channel data
     y, bins, _ = ax.hist(
-        CHData[BINNAME],
+        CHData[BINNAME] * CALIBRATION_FACTOR,
         bins = BinEdges,
         weights = CHData[COUNTNAME],
         alpha=0.5,
@@ -191,41 +191,5 @@ def PlotSingleChannel(
         ec=f"C{channel}"
     )
     x = (bins[:-1] + bins[1:]) / 2
-
-    if DISPLAY_FIT:
-        # extract channel features
-        idxMax = numpy.argmax(y); posMax = x[idxMax] ###< peak position in ticks
-        # std = (max(x) - min(x)) / 2.355
-        indices = numpy.where(y > 0.1 * max(y))[0]
-        std = (x[indices[-1]] - x[indices[0]]) / 2.355
-
-        # perform Gaussian fit of channel
-        try:
-            pars, covs = scipy.optimize.curve_fit(
-                Gaus, 
-                x,
-                y,
-                p0 = (numpy.max(CHData[COUNTNAME]), posMax, std),
-                maxfev=1000
-            )
-            errs = numpy.sqrt(numpy.diag(covs))
-        except RuntimeError:
-            print(f"[PlotSingleChannel] Could not perform fit for channel {channel}.")
-            print(f"[PlotSingleChannel] Initial guesses: {idxMax}, {std}")
-            pars = numpy.ones(3)
-            errs = numpy.ones(3)
-        
-        if debug:
-            print(f"[PlotSingleChannel] Peak position: {posMax}")
-            print(f"[PlotSingleChannel] Candidate std. deviation: {std}")
-            print(f"[PlotSingleChannel] Fit parameters: {pars}")
-            print(f"[PlotSingleChannel] Fit parameter errors: {errs}")
-
-        # plot fit
-        ax.plot(
-            x,
-            Gaus(x, *pars),
-            c=f'C{channel}'
-        )
 
     return None

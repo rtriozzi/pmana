@@ -9,14 +9,32 @@ from pmana.utils.fitting import Gaus, GausPlusLine, TripleGaus
 # usage: list of `Tuple(datetime, value)` for each single
 # calibration entry, the `value` is taken for measurements
 # taken after the specified `datetime`
+CALIBRATION_CHANGES_DEFAULT = {
+}
+
 CALIBRATION_CHANGES_COLDBOX = {
     'OuterLongCalibration': [
-        (datetime.datetime(2026, 3, 1, 0, 0), 1.0096),
+        (datetime.datetime(2026, 3, 1, 0, 0), 1. / 1.0096),
         (datetime.datetime(2026, 3, 7, 15, 0), 1.),
     ],
     'OuterShortCalibration': [
-        (datetime.datetime(2026, 3, 1, 0, 0), 0.9940),
+        (datetime.datetime(2026, 3, 1, 0, 0), 1. / 0.9940),
         (datetime.datetime(2026, 3, 7, 15, 0), 1.),
+    ],
+}
+
+CALIBRATION_CHANGES_NP02 = {
+    'OuterLongCalibration': [
+        (datetime.datetime(2026, 5, 1, 0, 0), 1.034850), # from in/out TP in Long-PrM
+    ],
+    'OuterShortCalibration': [
+        (datetime.datetime(2026, 5, 1, 0, 0), 0.900579 * 1.630957), # from in/out TP in Short-PrM
+    ],
+    'InnerLongCalibration': [
+        (datetime.datetime(2026, 5, 1, 0, 0), 1.),
+    ],
+    'InnerShortCalibration': [
+        (datetime.datetime(2026, 5, 1, 0, 0), 1.630957), # from in-Long-PrM / in-Short-PrM ratio
     ],
 }
 
