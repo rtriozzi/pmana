@@ -62,12 +62,7 @@ def ExtractICPeak(
            "The `PM_TAG` you used is not supported. Use `'Long'` or `'Short'`."
 
     # get data
-    Data = ExtractSingleMeasurement(
-        MeasurementPath,
-        IS_CSV = True,
-        COL_NAMES = ['binCenter', 'F1', 'F2', 'F3', 'F4'],
-        DELIMITER = ','
-    )
+    Data = ExtractSingleMeasurement(MeasurementPath, **ANALYSIS_CONFIGURATION['ExtractKwargs'])
 
     # logging
     print(f'[{PM_TAG}] Analyzing {MeasurementPath}...')

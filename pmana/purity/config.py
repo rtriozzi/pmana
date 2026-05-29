@@ -38,11 +38,18 @@ CALIBRATION_CHANGES_NP02 = {
     ],
 }
 
-# analysis configutaion, most importantly with
+# analysis configurations, most importantly with
 # the mapping between physical channels and readout data;
 # some limits for analysis, which should be stable
 # but might need tuning based on data and liquid argon purities
+
+# `default`configuration, developed from the Cold Box campaign
 DEFAULT_ANALYSIS_CONFIGURATION = {
+    'ExtractKwargs'                 : dict(
+                                        IS_CSV = True,
+                                        COL_NAMES = ['binCenter', 'F1', 'F2', 'F3', 'F4'],
+                                        DELIMITER = ','
+                                      ),            # parameters for the I/O, working pretty
     'InnerLongChannel'              : 2,            # mapping between readout channel and physical meaning
     'OuterLongChannel'              : 3,
     'InnerShortChannel'             : 0,
@@ -77,6 +84,29 @@ DEFAULT_ANALYSIS_CONFIGURATION = {
     'DriftVelocity'                 : 1.538,        # from Zambelli, + 3% according for different electric fields
     # 'DriftVelocity'               : 1.568,         # from BNL LAr property tables for 476 V/cm and 87.6 K
 }
+
+# `coldbox`-focused configuration
+COLDBOX_ANALYSIS_CONFIGURATION = DEFAULT_ANALYSIS_CONFIGURATION.copy()
+# Cold Box channel mapping
+COLDBOX_ANALYSIS_CONFIGURATION['InnerLongChannel']  = 2
+COLDBOX_ANALYSIS_CONFIGURATION['OuterLongChannel']  = 3
+COLDBOX_ANALYSIS_CONFIGURATION['InnerShortChannel'] = 0
+COLDBOX_ANALYSIS_CONFIGURATION['OuterShortChannel'] = 1
+# tuned Compton search
+COLDBOX_ANALYSIS_CONFIGURATION['ShortComptonSearchLimits']        = (0.3, 0.6)
+COLDBOX_ANALYSIS_CONFIGURATION['ShortMinComptonSearchLowLimit']   = 0.25
+COLDBOX_ANALYSIS_CONFIGURATION['LongComptonSearchLimits']         = (0.1, 0.6)
+COLDBOX_ANALYSIS_CONFIGURATION['LongMinComptonSearchLowLimit']    = 0.1
+COLDBOX_ANALYSIS_CONFIGURATION['ComptonMode']                     = 'rising'
+# switch to external scaling factor for the long-PrM
+# this will ignore the derivation of the scaling factor
+# from the study of the Compton edge on the outer anode,
+# and instead use the fixed `ExternalScaleFactorLong` factor
+COLDBOX_ANALYSIS_CONFIGURATION['ExternalScaleFactorLongMode']     = True
+COLDBOX_ANALYSIS_CONFIGURATION['ExternalScaleFactorLong']         = 1.2
+# limits to search and fit the IC peaks, after outer-to-inner subtraction
+COLDBOX_ANALYSIS_CONFIGURATION['LongICPeakSearchLimits']  = (0.1, 0.4)  # long Bi-PrM has a significant tail...
+COLDBOX_ANALYSIS_CONFIGURATION['ShortICPeakSearchLimits'] = (0.4, 0.7)  # short Bi-PrM has a significant test pulse...
 
 # configuration presets for the test-pulse-focused analysis
 # supported presets: `default`, `DT5781`, `CSV`
