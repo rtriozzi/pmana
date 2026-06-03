@@ -54,3 +54,20 @@ def GausPlusLine(
         Gaussian with exponential background.
     """
     return A * numpy.exp(- (x - Mu)**2 / (2 * S**2)) + a * x + b
+
+def Line(
+    x,
+    a,
+    b
+):
+    return a * x + b
+
+def LineErrorBand(
+    x, 
+    cov # covariance matrix from `scipy.optimize.curve_fit`
+):
+    da2 = cov[0, 0]
+    db2 = cov[1, 1]
+    dab = cov[0, 1]
+
+    return numpy.sqrt(x**2 * da2 + db2 + 2*x*dab)
