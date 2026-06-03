@@ -63,6 +63,8 @@ def ExtractICPeak(
 
     # get data
     Data = ExtractSingleMeasurement(MeasurementPath, **ANALYSIS_CONFIGURATION['ExtractKwargs'])
+    if DEBUG_MODE: 
+        print(f'[{PM_TAG}] `ExtractSingleMeasurement` extracted {len(Data)} channels.')
 
     # logging
     print(f'[{PM_TAG}] Analyzing {MeasurementPath}...')
@@ -193,6 +195,9 @@ def ExtractICPeak(
         print(f"[{PM_TAG}] Catched a fit failure in {MeasurementPath}. Please look into it.")
         pars = numpy.ones(3)
         errs = numpy.ones(3)
+
+    if DEBUG_MODE: 
+        print(f'[{PM_TAG}] Fit results: {pars}')
 
     if not DEBUG_MODE:
         return [pars[1], errs[1], ScalingFactor]
