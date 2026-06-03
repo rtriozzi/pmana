@@ -6,6 +6,76 @@ import os
 import pandas
 import datetime
 
+### extract a single measurement provided the path
+def ExtractSingleMeasurement(
+    FilePath,
+    IS_CSV = False,
+    CHANNEL_KEY = 'F*',
+    N_SKIP_LINES = 5,
+    COL_NAMES = ['BinCenter', 'Population'],
+    DELIMITER = ';'
+):
+    """
+        Input
+        ---
+        FilePath : str
+                   File name with path.
+
+        IS_CSV : bool
+                 Whether to expect a CSV file, 
+                 e.g., from CERN data starting Jan. 2026.
+
+        Output
+        ---
+        Provides channel data to be analyzed or plotted.
+        Returns a list of dataframes.
+    """
+
+    if not IS_CSV:
+        # find and sort all files starting with 'F'
+        FileList = sorted(glob.glob(os.path.join(FilePath, CHANNEL_KEY)))
+
+        # read all files into a list of DataFrames
+        Data = [
+            pandas.read_csv(f, skiprows=N_SKIP_LINES, names=COL_NAMES, delimiter=DELIMITER)
+            for f in FileList
+        ]
+    else:
+        # in the CSV format (as of March, 2026) all channels come from the same file
+        DataAll = pandas.read_csv(FilePath, names=COL_NAMES, delimiter=DELIMITER, skiprows=1)
+
+        # split into different dataframes, and bring everything back to the 'old' structure
+        Data = [
+            DataAll[[COL_NAMES[0], col]].rename(columns={COL_NAMES[0] : 'BinCenter', col : 'Population'})
+            for col in COL_NAMES[1:]
+        ]
+
+    return Data
+
+### timestamp extractors
+MONTH_ABBR = {
+    'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+    'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
+}
+
+def GetTimestampFromCSVName(
+    path
+):
+    """
+        From `Record_2026_Mar_02_18_22.csv` to  `datetime`.
+    """
+    _, year, month, day, hour, minute = path.stem.split("_")
+    return datetime.datetime(int(year), MONTH_ABBR[month], int(day), int(hour), int(minute))
+
+def GetTimestampFromDirName(
+    path
+):
+    """
+        From `20231015_143000` to  `datetime`.
+    """
+    return datetime.datetime.strptime(os.path.basename(path), "%Y%m%d_%H%M%S")
+
+### formatters for different data structures
 def FormatPadovaData(
     InputPath,
     TargetPath,
@@ -247,51 +317,7 @@ def PandasizeDT5781RawData(
 
     return channel_df
 
-def ExtractSingleMeasurement(
-    FilePath,
-    IS_CSV = False,
-    CHANNEL_KEY = 'F*',
-    N_SKIP_LINES = 5,
-    COL_NAMES = ['BinCenter', 'Population'],
-    DELIMITER = ';'
-):
-    """
-        Input
-        ---
-        FilePath : str
-                   File name with path.
-
-        IS_CSV : bool
-                 Whether to expect a CSV file, 
-                 e.g., from CERN data starting Jan. 2026.
-
-        Output
-        ---
-        Provides channel data to be analyzed or plotted.
-        Returns a list of dataframes.
-    """
-
-    if not IS_CSV:
-        # find and sort all files starting with 'F'
-        FileList = sorted(glob.glob(os.path.join(FilePath, CHANNEL_KEY)))
-
-        # read all files into a list of DataFrames
-        Data = [
-            pandas.read_csv(f, skiprows=N_SKIP_LINES, names=COL_NAMES, delimiter=DELIMITER)
-            for f in FileList
-        ]
-    else:
-        # in the CSV format (as of March, 2026) all channels come from the same file
-        DataAll = pandas.read_csv(FilePath, names=COL_NAMES, delimiter=DELIMITER, skiprows=1)
-
-        # split into different dataframes, and bring everything back to the 'old' structure
-        Data = [
-            DataAll[[COL_NAMES[0], col]].rename(columns={COL_NAMES[0] : 'BinCenter', col : 'Population'})
-            for col in COL_NAMES[1:]
-        ]
-
-    return Data
-
+### external file handling
 def ExtractFileTimes(
     TimeMapping,
     DELIMITER = '  ',
