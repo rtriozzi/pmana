@@ -5,11 +5,12 @@ from pmana.purity.config import DEFAULT_ANALYSIS_CONFIGURATION, CALIBRATION_CHAN
 
 from pmana.utils.io import ExtractSingleMeasurement
 
-from pmana.utils.fitting import Gaus
+from pmana.utils.calibration import ApplyChannelTemperatureCalibration
 
 def ExtractICPeak(
     MeasurementPath,
     Timestamp = None,
+    Temperature = None,
     PM_TAG = 'Long',
     DEBUG_MODE = False,
     ANALYSIS_CONFIGURATION = DEFAULT_ANALYSIS_CONFIGURATION,
@@ -79,6 +80,23 @@ def ExtractICPeak(
     CH_OUTER = ANALYSIS_CONFIGURATION[f'Outer{PM_TAG}Channel']
     xOuter = Data[CH_OUTER]['BinCenter'] * ANALYSIS_CONFIGURATION[f'Outer{PM_TAG}Calibration']
     yOuter = Data[CH_OUTER]['Population']
+
+    # optionally, calibrate out the temperature dependence channel-by-channel
+    if ANALYSIS_CONFIGURATION['EnableTemperatureCalibration']:
+        xInner = ApplyChannelTemperatureCalibration(
+            xInner,
+            Temperature,
+            ANALYSIS_CONFIGURATION['ReferenceTemperature'],
+            PARS = ANALYSIS_CONFIGURATION[f'Inner{PM_TAG}TemperaturePars'],
+            MODE = ANALYSIS_CONFIGURATION['TemperatureCalibrationMode']
+        )
+        xOuter = ApplyChannelTemperatureCalibration(
+            xOuter,
+            Temperature,
+            ANALYSIS_CONFIGURATION['ReferenceTemperature'],
+            PARS = ANALYSIS_CONFIGURATION[f'Outer{PM_TAG}TemperaturePars'],
+            MODE = ANALYSIS_CONFIGURATION['TemperatureCalibrationMode']
+        )
 
     # identify the Compton edge on the outer channel
     COMPTON_SEARCH_LIMITS = ANALYSIS_CONFIGURATION[f'{PM_TAG}ComptonSearchLimits']

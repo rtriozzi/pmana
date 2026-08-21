@@ -58,6 +58,13 @@ DEFAULT_ANALYSIS_CONFIGURATION = {
     'OuterLongCalibration'          : 1.,      
     'InnerShortCalibration'         : 1.,
     'OuterShortCalibration'         : 1.,
+    'EnableTemperatureCalibration'  : False,        # whether to enable the temperature correction to the each voltage (per channel)
+    'ReferenceTemperature'          : 20,           # reference temperature for the calibration, expressed in [°C]
+    'TemperatureCalibrationMode'    : 'linear',     # `linear` and `quadratic` currently supported
+    'InnerLongTemperaturePars'      : (1., 1.),     # calibration models for the temperature to gains for each channel (e.g., a*x + b for `linear``)
+    'OuterLongTemperaturePars'      : (1., 1.),
+    'InnerShortTemperaturePars'     : (1., 1.),
+    'OuterShortTemperaturePars'     : (1., 1.),   
     'ICFitter'                      : TripleGaus,   # simple Gaussain fit or triple-Gaussian fit currently supported
     'ShortGausFitLimits'            : (0.15, 0.15), # fitting limits around the peak for the short Pr.M.
     'LongGausFitLimits'             : (0.1, 0.15),  # fitting limits around the peak for the long Pr.M.
